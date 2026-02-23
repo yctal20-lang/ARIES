@@ -1,0 +1,27 @@
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771819776556, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771819781490, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771819781491, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771819782151, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771819782153, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771819787755, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771819787846, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5001}, "hypothesisId": "H1", "timestamp": 1771819794764, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5001}, "hypothesisId": "H1", "timestamp": 1771819794765, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5001}, "hypothesisId": "H1", "timestamp": 1771819795409, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5001}, "hypothesisId": "H1", "timestamp": 1771819795409, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771821982738, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771821982843, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771822018118, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771822018119, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771822018778, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771822018779, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771823105218, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771823105219, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771823105881, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "127.0.0.1", "port": 5000}, "hypothesisId": "H1", "timestamp": 1771823105881, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "1823111710"}}, "hypothesisId": "H2", "timestamp": 1771823113398, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 1823111710}, "hypothesisId": "H3", "timestamp": 1771823113398, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771823113469, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 1823111710}, "hypothesisId": "H2", "timestamp": 1771823113470, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771823450857, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "launch_exited", "data": {}, "hypothesisId": "H5", "timestamp": 1771823450976, "location": "run_web_dashboard.py"}

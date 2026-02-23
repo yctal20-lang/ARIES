@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.R.I.E.S — Mission Control</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aetheros.css') }}">
+</head>
+<body>
+    <div class="cosmic-bg"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Cover: shown until Start or Add is clicked -->
+    <div id="cover" class="cover">
+        <div class="cover-content">
+            <h1 class="cover-title">A.R.I.E.S</h1>
+            <p class="cover-subtitle">Advanced Retrieval & In-Orbit Elimination System</p>
+
+            <div class="cover-seed-actions">
+                <button type="button" id="cover-seed-btn" class="cover-seed-btn">Seed</button>
+            </div>
+            <div id="cover-seed-block" class="cover-seed-block" style="display: none;">
+                <span class="cover-seed-label">Сид (можно копировать):</span>
+                <div class="cover-seed-row">
+                    <output id="generated-seed-value" class="cover-seed-value" aria-label="Generated seed"></output>
+                    <button type="button" id="cover-seed-copy" class="cover-seed-copy" title="Копировать">Copy</button>
+                </div>
+            </div>
+            <div class="cover-seed-add-row">
+                <label for="seed-input" class="cover-seed-label">Введите сид:</label>
+                <div class="cover-seed-input-row">
+                    <input type="text" id="seed-input" class="cover-seed-input" placeholder="Сид (любое целое)" inputmode="numeric" autocomplete="off" />
+                    <button type="button" id="cover-add-btn" class="cover-add-btn">Add</button>
+                </div>
+            </div>
+
+            <button type="button" id="cover-start-btn" class="cover-start-btn">Start</button>
+            <p id="cover-status" class="cover-status"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard: hidden until data is loaded -->
+    <div id="dashboard" class="dashboard-hidden">
+    <!-- Top minimal header -->
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <span id="live-time" class="top-time">00:00:00</span>
+            <span class="mission-badge">⚡ MISSION ACTIVE</span>
+        </div>
+        <div class="top-bar-center">
+            <span>COMM</span>
+            <span>SAT-LINK</span>
+            <span>((o)) FREQ</span>
+            <span class="shields">SHIELDS <span id="shields-pct">47</span>%</span>
+        </div>
+        <div class="top-bar-right">
+            <span class="battery-label">BAT</span>
+            <div class="battery-bar"><div id="battery-fill" class="battery-fill" style="width:89%"></div></div>
+            <span id="battery-pct" class="battery-pct">89%</span>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <!-- Left column -->
+        <aside class="col col-left">
+            <div class="glass-panel velocity-panel">
+                <div class="panel-label">Velocity</div>
+                <div class="gauge-wrap">
+                    <svg class="gauge-svg" viewBox="0 0 120 120">
+                        <circle class="gauge-bg" cx="60" cy="60" r="52"/>
+                        <circle id="gauge-arc" class="gauge-arc" cx="60" cy="60" r="52"/>
+                    </svg>
+                    <div class="gauge-value" id="gauge-value">—</div>
+                    <div class="gauge-unit">KM/H</div>
+                </div>
+                <div class="readouts">
+                    <div class="readout"><span class="readout-icon">↑</span> <span id="readout-alt">—</span> ALT</div>
+                    <div class="readout"><span class="readout-icon">↓</span> <span id="readout-temp">—127°C</span> TEMP</div>
+                    <div class="readout"><span class="readout-icon">≡</span> <span id="readout-drag">0.31</span> Cd DRAG</div>
+                </div>
+            </div>
+            <div class="glass-panel environment-panel">
+                <div class="panel-label">Environment</div>
+                <div class="env-grid">
+                    <div class="env-cell"><span>EXT TEMP</span><span id="env-temp">-122°C</span></div>
+                    <div class="env-cell"><span>RADIATION</span><span id="env-rad">0.33 mSv/h</span></div>
+                    <div class="env-cell"><span>SOLAR FLUX</span><span id="env-solar">1376 W/m²</span></div>
+                    <div class="env-cell"><span>PARTICLE</span><span id="env-particle">453 p/cm³</span></div>
+                    <div class="env-cell"><span>VISIBILITY</span><span id="env-vis">95%</span></div>
+                    <div class="env-cell"><span>HUMIDITY</span><span id="env-hum">-1%</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center column -->
+        <section class="col col-center">
+            <div class="glass-panel trajectory-panel">
+                <div class="panel-label">Trajectory</div>
+                <div id="orbit-chart" class="chart chart-trajectory">
+                    <div class="loading">Loading trajectory...</div>
+                </div>
+                <div class="trajectory-footer">
+                    <span id="eta">— ETA</span>
+                    <span id="dist">— km DIST</span>
+                    <span id="heading">— HEADING</span>
+                </div>
+            </div>
+            <div class="glass-panel radar-panel">
+                <div class="panel-label radar-threats">▲ <span id="threat-count">0</span> THREATS</div>
+                <div class="radar-wrap">
+                    <canvas id="radar-canvas"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel danger-status-panel">
+                <div class="panel-label">Danger Status</div>
+                <div id="danger-gauge" class="danger-gauge">
+                    <div class="danger-level" id="danger-level-bar"></div>
+                </div>
+                <div class="danger-stats">
+                    <div class="danger-stat">
+                        <span>Уровень опасности:</span>
+                        <span id="danger-level-value">0%</span>
+                    </div>
+                    <div class="danger-stat">
+                        <span>Столкновений:</span>
+                        <span id="collision-count">0</span>
+                    </div>
+                    <div class="danger-stat">
+                        <span>Аномалий:</span>
+                        <span id="anomaly-count">0</span>
+                    </div>
+                    <div class="danger-stat">
+                        <span>Низкое топливо:</span>
+                        <span id="low-fuel-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right column -->
+        <aside class="col col-right">
+            <div class="glass-panel health-panel">
+                <div class="panel-label">System Health</div>
+                <div class="health-total">96<span>%</span></div>
+                <div class="health-list">
+                    <div class="health-item">
+                        <span>Propulsion</span>
+                        <div class="health-bar"><div id="bar-prop" class="health-fill" style="width:100%"></div></div>
+                        <span id="pct-prop">100%</span>
+                    </div>
+                    <div class="health-item">
+                        <span>Navigation</span>
+                        <div class="health-bar"><div id="bar-nav" class="health-fill" style="width:100%"></div></div>
+                        <span id="pct-nav">100%</span>
+                    </div>
+                    <div class="health-item">
+                        <span>Life Support</span>
+                        <div class="health-bar"><div id="bar-life" class="health-fill" style="width:95%"></div></div>
+                        <span id="pct-life">95%</span>
+                    </div>
+                    <div class="health-item">
+                        <span>Communications</span>
+                        <div class="health-bar"><div id="bar-comm" class="health-fill health-warn" style="width:87%"></div></div>
+                        <span id="pct-comm">87%</span>
+                    </div>
+                    <div class="health-item">
+                        <span>AI Core</span>
+                        <div class="health-bar"><div id="bar-ai" class="health-fill" style="width:99%"></div></div>
+                        <span id="pct-ai">99%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-panel copilot-panel">
+                <div class="panel-label">AI Copilot <span class="online-badge">• ONLINE</span></div>
+                <div id="copilot-cards" class="copilot-cards">
+                    <div class="copilot-card card-blue">Optimal trajectory confirmed. Fuel efficiency nominal. T+00:12</div>
+                    <div class="copilot-card card-orange">Micro-debris field detected ahead. Recommending correction. T+00:34</div>
+                    <div class="copilot-card card-green">Fusion harmonics nominal. Thermal protection nominal. T+01:07</div>
+                </div>
+                <div class="copilot-analyzing">••• Analyzing...</div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Secondary row: Telemetry, Fusion, Resources (compact) -->
+    <section class="dashboard-secondary">
+        <div class="glass-panel">
+            <div class="panel-label">Telemetry — ECI</div>
+            <div id="position-chart" class="chart chart-small"></div>
+        </div>
+        <div class="glass-panel">
+            <div class="panel-label">Fusion & Velocity</div>
+            <div id="velocity-chart" class="chart chart-small"></div>
+        </div>
+        <div class="glass-panel">
+            <div class="panel-label">Resources</div>
+            <div id="resources-chart" class="chart chart-small"></div>
+        </div>
+    </section>
+
+    <!-- Danger warnings panel -->
+    <div id="danger-panel" class="danger-panel" style="display: none;">
+        <div class="danger-header">
+            <span class="danger-icon">⚠️</span>
+            <span id="danger-title">ОПАСНОСТЬ ОБНАРУЖЕНА</span>
+            <button class="danger-close" onclick="document.getElementById('danger-panel').style.display='none'">×</button>
+        </div>
+        <div id="danger-content" class="danger-content"></div>
+    </div>
+
+    <footer class="footer-status" id="footer-status">
+        <span class="live-dot" id="status-dot"></span>
+        <span>A.R.I.E.S</span>
+        <span>·</span>
+        <span>Advanced Retrieval & In-Orbit Elimination System</span>
+        <span>·</span>
+        <span id="sys-status">SYS NOMINAL</span>
+        <span id="current-seed" style="display: none;"> · Seed: <span id="seed-value">—</span></span>
+        <span id="warnings-count" style="display: none;">·</span>
+        <span id="warnings-text" style="display: none;">WARNINGS: <span id="warnings-num">0</span></span>
+    </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
+

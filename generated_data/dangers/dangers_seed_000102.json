@@ -1,0 +1,27 @@
+{
+  "seed": 102,
+  "total_count": 2,
+  "collision_count": 0,
+  "anomaly_count": 2,
+  "low_fuel_count": 0,
+  "max_danger_level": 0.5481287919455212,
+  "has_danger": true,
+  "events": [
+    {
+      "type": "anomaly",
+      "type_ru": "аномалия",
+      "time": 23.5,
+      "severity": "MEDIUM",
+      "value": 0.5481287919455212,
+      "description": "Аномалия телеметрии, уровень 54.8%"
+    },
+    {
+      "type": "anomaly",
+      "type_ru": "аномалия",
+      "time": 42.0,
+      "severity": "MEDIUM",
+      "value": 0.4437664277105697,
+      "description": "Аномалия телеметрии, уровень 44.4%"
+    }
+  ]
+}
