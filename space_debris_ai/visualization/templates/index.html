@@ -107,16 +107,29 @@
                     </div>
                 </div>
                 <div id="orbit-debris-popup" class="orbit-debris-popup" style="display: none;">
-                    <strong>Мусор</strong><br>
-                    Размер: <span id="orbit-popup-size">—</span> m<br>
-                    Вес: <span id="orbit-popup-mass">—</span> kg<br>
-                    Материал: <span id="orbit-popup-material">—</span><br>
-                    Тип: <span id="orbit-popup-type">—</span><br>
-                    Траектория: <span id="orbit-popup-trajectory">—</span><br>
-                    Расстояние до столкновения: <span id="orbit-popup-distance">—</span><br>
-                    Время до столкновения: <span id="orbit-popup-ttc">—</span><br>
-                    Рекомендация: <span id="orbit-popup-recommendation">—</span><br>
-                    <span id="orbit-popup-recommendation-desc" class="orbit-popup-desc"></span>
+                    <button type="button" id="orbit-popup-close" class="orbit-popup-close" title="Закрыть" aria-label="Закрыть">×</button>
+                    <strong class="orbit-popup-title">Мусор</strong>
+                    <div class="orbit-popup-cols">
+                        <div class="orbit-popup-col orbit-popup-col-left">
+                            Размер: <span id="orbit-popup-size">—</span> m<br>
+                            Вес: <span id="orbit-popup-mass">—</span> kg<br>
+                            Материал: <span id="orbit-popup-material">—</span><br>
+                            Тип: <span id="orbit-popup-type">—</span><br>
+                            Траектория: <span id="orbit-popup-trajectory">—</span>
+                        </div>
+                        <div class="orbit-popup-col orbit-popup-col-right">
+                            Расстояние: <span id="orbit-popup-distance">—</span><br>
+                            Время до столкновения: <span id="orbit-popup-ttc">—</span><br>
+                            Рекомендация: <span id="orbit-popup-recommendation">—</span><br>
+                            <span id="orbit-popup-recommendation-desc" class="orbit-popup-desc"></span>
+                        </div>
+                    </div>
+                    <div class="orbit-popup-actions">
+                        <span class="orbit-popup-actions-label">Действие:</span>
+                        <button type="button" id="orbit-popup-action-monitor" class="orbit-popup-action" data-action="monitor">Наблюдение</button>
+                        <button type="button" id="orbit-popup-action-capture" class="orbit-popup-action" data-action="capture">Утилизация</button>
+                        <button type="button" id="orbit-popup-action-avoid" class="orbit-popup-action" data-action="avoid">Обход</button>
+                    </div>
                 </div>
                 <div class="trajectory-footer">
                     <span id="eta">— ETA</span>
@@ -136,21 +149,25 @@
                     <div class="danger-level" id="danger-level-bar"></div>
                 </div>
                 <div class="danger-stats">
-                    <div class="danger-stat">
+                    <div class="danger-stat danger-stat-danger">
                         <span>Уровень опасности:</span>
-                        <span id="danger-level-value">0%</span>
+                        <span id="danger-level-value" class="danger-stat-value">0%</span>
                     </div>
                     <div class="danger-stat">
                         <span>Столкновений:</span>
-                        <span id="collision-count">0</span>
+                        <span id="collision-count" class="danger-stat-value">0</span>
                     </div>
-                    <div class="danger-stat">
+                    <div class="danger-stat danger-stat-anomaly">
                         <span>Аномалий:</span>
-                        <span id="anomaly-count">0</span>
+                        <span id="anomaly-count" class="danger-stat-value">0</span>
                     </div>
                     <div class="danger-stat">
-                        <span>Низкое топливо:</span>
-                        <span id="low-fuel-count">0</span>
+                        <span>Низкое топливо (предупр.):</span>
+                        <span id="low-fuel-count" class="danger-stat-value">0</span>
+                    </div>
+                    <div class="danger-stat danger-stat-fuel">
+                        <span>Топливо (кг):</span>
+                        <span id="fuel-mass-value" class="danger-stat-value">—</span>
                     </div>
                 </div>
             </div>
@@ -225,6 +242,14 @@
             <button class="danger-close" onclick="document.getElementById('danger-panel').style.display='none'">×</button>
         </div>
         <div id="danger-content" class="danger-content"></div>
+    </div>
+    <!-- No-anomaly panel (green), скрывается по кнопке Утилизация -->
+    <div id="no-anomaly-panel" class="no-anomaly-panel" style="display: none;">
+        <div class="no-anomaly-header">
+            <span class="no-anomaly-icon">✓</span>
+            <span id="no-anomaly-title">АНОМАЛИЙ НЕ ОБНАРУЖЕНО</span>
+            <button type="button" class="no-anomaly-close" id="no-anomaly-close" aria-label="Закрыть">×</button>
+        </div>
     </div>
 
     <footer class="footer-status" id="footer-status">

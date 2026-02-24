@@ -110,13 +110,23 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
                 })
                 danger_level = max(danger_level, 0.3)
 
-        # 2) Аномалия по шагу/сиду
-        if step > 20 and (step + seed) % 37 == 0:
+        # 2) Аномалия по шагу/сиду (сиды с seed % 7 в {0, 1} — без аномалий); разные причины
+        _ANOMALY_TYPES = [
+            "TELEMETRY_ANOMALY",
+            "SENSOR_DEVIATION",
+            "COMM_LOSS",
+            "ORIENTATION_ANOMALY",
+            "GYRO_DRIFT",
+            "POWER_FLUCTUATION",
+        ]
+        if step > 20 and (step + seed) % 37 == 0 and ((seed % 7) not in (0, 1)):
             score = 0.4 + np.random.rand() * 0.4
+            n_anom = len(data["anomaly_detections"])
+            atype = _ANOMALY_TYPES[(step + seed + n_anom) % len(_ANOMALY_TYPES)]
             data["anomaly_detections"].append({
                 "time": float(t),
                 "score": float(score),
-                "type": "TELEMETRY_ANOMALY",
+                "type": atype,
             })
             danger_level = max(danger_level, score)
 
@@ -135,6 +145,10 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
         data["danger_levels"].append(float(danger_level))
         if term or trunc:
             break
+
+    # Ограничение аномалий: не выводить десятки — достаточно несколько за миссию
+    MAX_ANOMALIES_PER_MISSION = 5
+    data["anomaly_detections"] = (data.get("anomaly_detections") or [])[:MAX_ANOMALIES_PER_MISSION]
 
     data["debris_positions"] = [d.position.tolist() for d in env.debris_objects]
     sc_pos = env.spacecraft.position
@@ -166,25 +180,70 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
             "relative_velocity_km_s": rel_vel,
             "material": material,
         })
+    # Два демо-объекта рядом с кораблём: один маленький (выброс в атмосферу/сгорание), один крупный (обход)
+    sc_pos = np.asarray(sc_pos)
+    sc_vel = np.asarray(sc_vel)
+    u = sc_pos / (np.linalg.norm(sc_pos) + 1e-9)
+    perp = np.array([-u[1], u[0], 0.0])
+    perp = perp / (np.linalg.norm(perp) + 1e-9)
+    for idx, (label, size, mass, object_id) in enumerate([
+        ("small", 0.45, 35.0, "demo_small"),
+        ("large", 2.6, 380.0, "demo_large"),
+        ("large2", 2.2, 320.0, "demo_large2"),
+    ]):
+        offset_km = 0.06 + idx * 0.05
+        pos = (sc_pos + perp * offset_km).tolist()
+        vel = sc_vel.tolist()
+        dist_km = float(offset_km)
+        rel_vel = 0.0
+        debris_list.insert(idx, {
+            "position": pos,
+            "velocity": vel,
+            "size": size,
+            "mass": mass,
+            "debris_type": "fragment",
+            "object_id": object_id,
+            "distance_km": dist_km,
+            "relative_velocity_km_s": rel_vel,
+            "material": "Aluminum",
+        })
     data["debris"] = debris_list
 
-    # Elimination suggestions per debris
+    # Elimination suggestions: based on distance (far → наблюдение) and size/mass (small → сгорание, large → обход)
+    # Buttons remain: Обход, Утилизация, Наблюдение — меняется только текст рекомендации.
     elimination_suggestions = []
     for item in debris_list:
         oid = item["object_id"]
         dist = item["distance_km"]
         rel_vel = item["relative_velocity_km_s"]
         size = item["size"]
-        if dist < 0.05 and rel_vel < 0.01:
-            suggestion, reason, priority = "capture", "Within capture range, low relative velocity", 1
-        elif dist < 0.15 and rel_vel >= 0.01:
-            suggestion, reason, priority = "avoid", "Collision risk: high relative velocity", 1
-        elif dist < 0.5:
-            suggestion, reason, priority = "monitor", "Within monitoring range", 2
+        mass = item["mass"]
+        # Далеко — всегда наблюдение
+        if dist >= 0.5:
+            suggestion, reason, priority = "monitor", "Объект далеко — наблюдение", 3
         else:
-            suggestion, reason, priority = "monitor", "Track for future operations", 3
-        if size > 2.0 and suggestion in ("monitor", "capture"):
-            reason = reason + "; large object, consider deorbit"
+            # Близко: по размеру и массе
+            small_size = size < 1.0
+            small_mass = mass < 80
+            large_size = size >= 2.0
+            large_mass = mass >= 200
+            if small_size and small_mass:
+                suggestion = "capture"
+                reason = "Малый объект — выброс в атмосферу и сгорание (после расщипления при необходимости)"
+                priority = 1
+            elif large_size or large_mass:
+                suggestion = "avoid"
+                reason = "Крупный объект — захват нецелесообразен, рекомендуется обход"
+                priority = 1
+            elif size >= 1.0 and size < 2.0:
+                suggestion = "capture"
+                reason = "Средний объект — утилизация или сведение с орбиты"
+                priority = 2
+            else:
+                if rel_vel >= 0.02:
+                    suggestion, reason, priority = "avoid", "Высокая относительная скорость — обход", 1
+                else:
+                    suggestion, reason, priority = "monitor", "В зоне наблюдения", 2
         elimination_suggestions.append({
             "object_id": oid,
             "suggestion": suggestion,
@@ -328,8 +387,8 @@ def disposal_method():
     return jsonify(result)
 
 
-def run_server(host="127.0.0.1", port=5000, debug=True):
-    """Run the Flask server."""
+def run_server(host="0.0.0.0", port=5000, debug=True):
+    """Run the Flask server. host=0.0.0.0 — слушать на всех интерфейсах (доступ с других устройств)."""
     # #region agent log
     _dlog("run_server_entered", {"host": host, "port": port}, "H1")
     # #endregion
@@ -338,10 +397,26 @@ def run_server(host="127.0.0.1", port=5000, debug=True):
     print("Web Dashboard Server")
     print("=" * 70)
     print(f"\nServer starting at: http://{host}:{port}")
+    print("  На этом ПК:        http://127.0.0.1:{port}")
+    if host == "0.0.0.0":
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+            print(f"  С других устройств: http://{local_ip}:{port}")
+        except Exception:
+            print(f"  С других устройств: http://<IP этого ПК>:{port}")
     print("\nOpen your browser and navigate to the URL above.")
+    if host == "0.0.0.0":
+        print("  Если с другого устройства не открывается — разрешите Python в брандмауэре Windows")
+        print("  (Панель управления → Брандмауэр → Доп. параметры → Правила для входящих → Создать правило → Порт TCP 5000).")
     print("Press Ctrl+C to stop the server.\n")
     
-    app.run(host=host, port=port, debug=debug)
+    # use_reloader=False при 0.0.0.0 — иначе на Windows сервер может не принимать подключения из сети
+    use_reloader = debug and host != "0.0.0.0"
+    app.run(host=host, port=port, debug=debug, use_reloader=use_reloader, threaded=True)
 
 
 if __name__ == "__main__":

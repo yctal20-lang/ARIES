@@ -66,6 +66,9 @@ const ORBIT_SHIP_LOOP_MS = 120000; // один полный круг по экв
 let debrisSelectedAction = {};
 let debrisRemovedFromMap = {};  // object_id -> true: утилизация — скрыть с карты
 let debrisAvoided = {};        // object_id -> true: обход — рисовать сзади
+// Мусор «к утилизации»: исчезнет со сферы спустя время после выбора утилизации (object_id -> { addedAt: timestamp })
+var debrisPendingRemoval = {};
+var DEBRIS_REMOVAL_DELAY_MS = 6500; // утилизация срабатывает через ~6.5 сек после выбора, пока шаттл движется по орбите
 var dismissedAnomalyKeys = {}; // ключи устранённых аномалий (одно «Устранить» — одна аномалия)
 var noAnomalyPanelDismissed = false; // закрыла зелёное окно — больше не показывать
 var dangerPanelShowTimeoutId = null;  // задержка перед показом красного окна (не так быстро)
@@ -82,6 +85,44 @@ function scheduleOrbitChartRender(data) {
         return;
     }
     renderOrbitChart(data);
+}
+
+// Удалить конкретный объект мусора с 3D-сферы без полной перерисовки
+function removeDebrisFromOrbitPlot(objectId) {
+    var orbitChartEl = document.getElementById('orbit-chart');
+    if (!orbitChartEl || !orbitChartEl.data) return;
+    var oidStr = String(objectId);
+    var data = orbitChartEl.data;
+    for (var ti = 0; ti < data.length; ti++) {
+        var trace = data[ti];
+        if (!trace || !trace.customdata || !trace.x || !trace.y || !trace.z) continue;
+        var cdArr = trace.customdata;
+        var newX = [], newY = [], newZ = [], newCd = [], newText = [];
+        var newSizes = null;
+        var hasSizes = trace.marker && Array.isArray(trace.marker.size);
+        if (hasSizes) newSizes = [];
+        var changed = false;
+        for (var pi = 0; pi < cdArr.length; pi++) {
+            var cd = cdArr[pi];
+            var cdOid = (cd && cd.length >= 8) ? cd[7] : null;
+            if (cdOid != null && String(cdOid) === oidStr) {
+                changed = true; // пропускаем эту точку — она «исчезает»
+                continue;
+            }
+            newX.push(trace.x[pi]);
+            newY.push(trace.y[pi]);
+            newZ.push(trace.z[pi]);
+            newCd.push(cdArr[pi]);
+            if (trace.text && Array.isArray(trace.text)) newText.push(trace.text[pi]);
+            if (hasSizes) newSizes.push(trace.marker.size[pi]);
+        }
+        if (changed) {
+            var update = { x: [newX], y: [newY], z: [newZ], customdata: [newCd] };
+            if (newText.length) update.text = [newText];
+            if (hasSizes) update['marker.size'] = [newSizes];
+            try { Plotly.restyle(orbitChartEl, update, [ti]); } catch (e) {}
+        }
+    }
 }
 
 document.addEventListener('mouseup', function() {
@@ -127,6 +168,16 @@ function startOrbitShipAnimation() {
         var y = p0[1] + (p1[1] - p0[1]) * frac;
         var z = p0[2] + (p1[2] - p0[2]) * frac;
         var now = Date.now();
+        // Утилизация: убрать мусор со сферы через небольшую задержку после выбора (пока шаттл движется)
+        for (var oid in debrisPendingRemoval) {
+            if (!debrisPendingRemoval.hasOwnProperty(oid)) continue;
+            var info = debrisPendingRemoval[oid];
+            if (!info || !info.addedAt) continue;
+            if (now - info.addedAt >= DEBRIS_REMOVAL_DELAY_MS) {
+                removeDebrisFromOrbitPlot(oid);
+                delete debrisPendingRemoval[oid];
+            }
+        }
         if (!orbitChartUserDragging && restyleInterval < Infinity && (now - lastShipRestyleTime >= restyleInterval)) {
             lastShipRestyleTime = now;
             try {
@@ -951,8 +1002,10 @@ function renderOrbitChart(data) {
             if (action === 'capture') {
                 var noAnomalyPanel = document.getElementById('no-anomaly-panel');
                 if (noAnomalyPanel) noAnomalyPanel.style.display = 'none';
+                // Мусор исчезнет со сферы не сразу, а через ~6–7 сек после выбора утилизации
+                debrisPendingRemoval[String(oid)] = { addedAt: Date.now() };
             }
-            // Сферу не перерисовываем — корабль продолжает двигаться без обновления сцены
+            // Сферу целиком не перерисовываем — корабль продолжает двигаться без полного обновления сцены
             var obstaclesCountEl = document.getElementById('orbit-obstacles-count');
             if (obstaclesCountEl && lastMissionData && lastMissionData.debris) {
                 var remaining = lastMissionData.debris.filter(function(d) { return !debrisRemovedFromMap[String(d.object_id)]; });

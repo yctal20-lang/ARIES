@@ -208,6 +208,15 @@ body {
     box-shadow: 0 0 8px rgba(128, 0, 0, 0.35);
 }
 
+.cover-seed-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.cover-seed-hint strong {
+    color: var(--neon-cyan);
+}
+
 .cover-add-btn {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.9rem;
@@ -729,27 +738,37 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* Trajectory panel */
+/* Trajectory panel: позиции и размеры НЕ менять ни при каких условиях */
 .trajectory-chart-wrap {
     display: flex;
     gap: 0.5rem;
     align-items: stretch;
     min-height: 0;
+    position: relative;
 }
 .trajectory-panel .chart-trajectory {
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 700px;
+    width: 700px;
+    min-width: 700px;
+    max-width: 700px;
 }
 .chart-trajectory {
     height: 280px;
+    min-height: 280px;
+    max-height: 280px;
 }
 
 .orbit-obstacles-panel {
+    flex: 0 0 72px;
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+    height: 280px;
+    min-height: 280px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 4.5rem;
     padding: 0.5rem;
     background: rgba(12, 14, 24, 0.6);
     border: 1px solid var(--glass-border);
@@ -957,12 +976,30 @@ body {
 .danger-stat {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
     color: var(--text-muted);
 }
 
-.danger-stat span:last-child {
+.danger-stat span:last-child,
+.danger-stat-value {
     color: var(--text-primary);
     font-weight: 500;
+    text-align: right;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.danger-stat-fuel,
+.danger-stat-anomaly,
+.danger-stat-danger {
+    justify-content: flex-start;
+    gap: 0.35rem;
+}
+.danger-stat-fuel .danger-stat-value,
+.danger-stat-anomaly .danger-stat-value,
+.danger-stat-danger .danger-stat-value {
+    text-align: left;
 }
 
 /* Danger warnings panel */
@@ -1025,6 +1062,59 @@ body {
     color: #ff4444;
 }
 
+/* No-anomaly panel (green), top-left like danger panel */
+.no-anomaly-panel {
+    position: fixed;
+    top: 3rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: 500px;
+    z-index: 199;
+    background: rgba(12, 24, 14, 0.95);
+    backdrop-filter: blur(16px);
+    border: 2px solid #22c55e;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.25), 0 0 24px rgba(34, 197, 94, 0.15);
+}
+
+.no-anomaly-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #22c55e;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.no-anomaly-icon {
+    font-size: 1.25rem;
+}
+
+.no-anomaly-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+}
+.no-anomaly-close:hover {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
 .danger-content {
     padding: 1rem;
     max-height: 300px;
@@ -1057,10 +1147,56 @@ body {
     font-size: 1.1rem;
 }
 
-.danger-warning-text {
+.danger-warning-body {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.danger-warning-text {
     color: var(--text-primary);
     font-weight: 500;
+}
+
+.danger-warning-reason {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.danger-warning-resolve {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.65rem;
+    background: rgba(255, 68, 68, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.danger-warning-resolve:hover {
+    background: rgba(255, 68, 68, 0.35);
+}
+
+.danger-resolve-all-wrap {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 68, 68, 0.25);
+}
+
+.danger-warning-resolve-all {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+    background: rgba(255, 68, 68, 0.25);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.danger-warning-resolve-all:hover {
+    background: rgba(255, 68, 68, 0.4);
 }
 
 .danger-warning-time {
@@ -1223,8 +1359,9 @@ body {
     right: 0.5rem;
     left: auto;
     bottom: auto;
-    max-width: 280px;
+    max-width: 320px;
     padding: 0.5rem 0.75rem;
+    padding-top: 1.5rem;
     background: var(--glass);
     border: 1px solid var(--neon-cyan);
     border-radius: 6px;
@@ -1232,11 +1369,83 @@ body {
     color: var(--text-primary);
     z-index: 10;
 }
+.orbit-popup-close {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.orbit-popup-close:hover {
+    background: rgba(255, 100, 100, 0.25);
+    color: var(--text-primary);
+}
+.orbit-popup-title {
+    display: block;
+    margin-bottom: 0.35rem;
+}
+.orbit-popup-cols {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+}
+.orbit-popup-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+.orbit-popup-col-left { flex: 1; }
+.orbit-popup-col-right { flex: 1; }
 .orbit-popup-desc {
     display: block;
     font-size: 0.7rem;
     color: var(--text-muted);
     margin-top: 0.25rem;
+}
+.orbit-popup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(0, 255, 255, 0.2);
+}
+.orbit-popup-actions-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-right: 0.25rem;
+}
+.orbit-popup-action {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+.orbit-popup-action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+.orbit-popup-action.active {
+    background: rgba(0, 255, 255, 0.15);
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
 }
 
 .explore-collision-popup {
