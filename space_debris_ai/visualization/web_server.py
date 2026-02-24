@@ -137,6 +137,64 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
             break
 
     data["debris_positions"] = [d.position.tolist() for d in env.debris_objects]
+    sc_pos = env.spacecraft.position
+    sc_vel = env.spacecraft.velocity
+
+    # Debris array: position, velocity (for trajectory), size, mass, type, material (ESA/NASA typical)
+    REFERENCE_SIZE_M = 5.0  # Reference spacecraft size (m) for UI comparison
+    MATERIAL_BY_TYPE = {
+        "fragment": ["Aluminum", "Steel", "Titanium", "Copper"],
+        "rocket_body": ["Aluminum", "Aluminum alloy"],
+        "satellite": ["Aluminum", "Titanium", "Carbon composite"],
+        "tool": ["Steel", "Titanium"],
+        "panel": ["Kapton", "Solar cell", "MLI"],
+    }
+    debris_list = []
+    for d in env.debris_objects:
+        dist_km = float(np.linalg.norm(d.position - sc_pos))
+        rel_vel = float(np.linalg.norm(d.velocity - sc_vel))
+        choices = MATERIAL_BY_TYPE.get(d.debris_type, ["Aluminum", "Steel"])
+        material = str(np.random.choice(choices))
+        debris_list.append({
+            "position": d.position.tolist(),
+            "velocity": d.velocity.tolist(),
+            "size": float(d.size),
+            "mass": float(d.mass),
+            "debris_type": d.debris_type,
+            "object_id": d.object_id,
+            "distance_km": dist_km,
+            "relative_velocity_km_s": rel_vel,
+            "material": material,
+        })
+    data["debris"] = debris_list
+
+    # Elimination suggestions per debris
+    elimination_suggestions = []
+    for item in debris_list:
+        oid = item["object_id"]
+        dist = item["distance_km"]
+        rel_vel = item["relative_velocity_km_s"]
+        size = item["size"]
+        if dist < 0.05 and rel_vel < 0.01:
+            suggestion, reason, priority = "capture", "Within capture range, low relative velocity", 1
+        elif dist < 0.15 and rel_vel >= 0.01:
+            suggestion, reason, priority = "avoid", "Collision risk: high relative velocity", 1
+        elif dist < 0.5:
+            suggestion, reason, priority = "monitor", "Within monitoring range", 2
+        else:
+            suggestion, reason, priority = "monitor", "Track for future operations", 3
+        if size > 2.0 and suggestion in ("monitor", "capture"):
+            reason = reason + "; large object, consider deorbit"
+        elimination_suggestions.append({
+            "object_id": oid,
+            "suggestion": suggestion,
+            "reason": reason,
+            "priority": priority,
+        })
+    data["elimination_suggestions"] = elimination_suggestions
+
+    data["spacecraft_status"]["position"] = sc_pos.tolist()
+    data["spacecraft_status"]["reference_size_m"] = REFERENCE_SIZE_M
     velocities_arr = np.array(data["velocities"])
     data["speeds"] = np.linalg.norm(velocities_arr, axis=1).tolist()
     current_danger = data["danger_levels"][-1] if data["danger_levels"] else 0.0
@@ -216,6 +274,58 @@ def status():
         "danger_level": float(current_danger),
         "total_warnings": total_warnings,
     })
+
+
+def _disposal_method_for_debris(size_m: float, mass_kg: float, debris_type: str) -> dict:
+    """
+    Suggest disposal method based on ESA/NASA-style approaches:
+    - Very small: laser ablation (NASA ground-based laser)
+    - Small: net capture (RemoveDebris)
+    - Medium: harpoon or robotic arm
+    - Large: rendezvous + capture + deorbit (ADR, ClearSpace-1)
+    """
+    if size_m < 0.1 or mass_kg < 1:
+        return {
+            "method": "Laser ablation",
+            "description": "Ground-based or on-board pulsed laser to deorbit small debris (NASA approach for 1–10 cm objects).",
+        }
+    if size_m < 1.0 or mass_kg < 50:
+        return {
+            "method": "Net capture",
+            "description": "Deploy net to capture debris, then deorbit (RemoveDebris mission demonstrated).",
+        }
+    if size_m < 3.0 or mass_kg < 200:
+        return {
+            "method": "Harpoon or robotic arm",
+            "description": "Harpoon capture or robotic arm grapple, then controlled reentry (RemoveDebris / ADR).",
+        }
+    return {
+        "method": "Rendezvous and capture + deorbit",
+        "description": "Close proximity operations, capture and deorbit (ClearSpace-1 / ESA ADRIOS style).",
+    }
+
+
+@app.route("/api/disposal-method", methods=["GET", "POST"])
+def disposal_method():
+    """
+    Return suggested disposal method for debris (ESA/NASA-style).
+    GET: ?size=1.5&mass=100&debris_type=fragment
+    POST: JSON { "size": 1.5, "mass": 100, "debris_type": "fragment" }
+    """
+    if request.method == "POST" and request.is_json:
+        body = request.get_json() or {}
+        size_m = float(body.get("size", 0.5))
+        mass_kg = float(body.get("mass", 50))
+        debris_type = str(body.get("debris_type", "unknown"))
+    else:
+        try:
+            size_m = float(request.args.get("size", 0.5))
+            mass_kg = float(request.args.get("mass", 50))
+        except (ValueError, TypeError):
+            size_m, mass_kg = 0.5, 50
+        debris_type = request.args.get("debris_type", "unknown")
+    result = _disposal_method_for_debris(size_m, mass_kg, debris_type)
+    return jsonify(result)
 
 
 def run_server(host="127.0.0.1", port=5000, debug=True):

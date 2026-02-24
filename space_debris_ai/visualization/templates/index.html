@@ -97,8 +97,26 @@
         <section class="col col-center">
             <div class="glass-panel trajectory-panel">
                 <div class="panel-label">Trajectory</div>
-                <div id="orbit-chart" class="chart chart-trajectory">
-                    <div class="loading">Loading trajectory...</div>
+                <div class="trajectory-chart-wrap">
+                    <div id="orbit-chart" class="chart chart-trajectory">
+                        <div class="loading">Loading trajectory...</div>
+                    </div>
+                    <div class="orbit-obstacles-panel">
+                        <span class="orbit-obstacles-label">Преград</span>
+                        <span id="orbit-obstacles-count">0</span>
+                    </div>
+                </div>
+                <div id="orbit-debris-popup" class="orbit-debris-popup" style="display: none;">
+                    <strong>Мусор</strong><br>
+                    Размер: <span id="orbit-popup-size">—</span> m<br>
+                    Вес: <span id="orbit-popup-mass">—</span> kg<br>
+                    Материал: <span id="orbit-popup-material">—</span><br>
+                    Тип: <span id="orbit-popup-type">—</span><br>
+                    Траектория: <span id="orbit-popup-trajectory">—</span><br>
+                    Расстояние до столкновения: <span id="orbit-popup-distance">—</span><br>
+                    Время до столкновения: <span id="orbit-popup-ttc">—</span><br>
+                    Рекомендация: <span id="orbit-popup-recommendation">—</span><br>
+                    <span id="orbit-popup-recommendation-desc" class="orbit-popup-desc"></span>
                 </div>
                 <div class="trajectory-footer">
                     <span id="eta">— ETA</span>
@@ -211,7 +229,7 @@
 
     <footer class="footer-status" id="footer-status">
         <span class="live-dot" id="status-dot"></span>
-        <span>A.R.I.E.S</span>
+        <span class="footer-brand">A.R.I.E.S</span>
         <span>·</span>
         <span>Advanced Retrieval & In-Orbit Elimination System</span>
         <span>·</span>

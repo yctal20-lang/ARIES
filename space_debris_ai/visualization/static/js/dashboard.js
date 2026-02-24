@@ -4,17 +4,31 @@
 const COLORS = {
     bg: '#050508',
     panel: 'rgba(12, 14, 24, 0.85)',
-    cyan: '#00d4ff',
-    blue: '#58a6ff',
+    cyan: '#800000',
+    blue: '#a52a2a',
     orange: '#ff8c42',
     green: '#22c55e',
-    purple: '#a78bfa',
+    purple: '#8b4513',
     textPrimary: '#e2e8f0',
     textSecondary: '#64748b',
     grid: 'rgba(100, 116, 139, 0.15)',
 };
 
 const EARTH_RADIUS = 6371.0; // km
+
+// Экваториальная орбита: круг в плоскости XY (z=0), бесконечное движение корабля по экватору
+const EQUATORIAL_ORBIT_RADIUS_KM = 7000; // км от центра Земли (~630 км над поверхностью)
+const EQUATORIAL_ORBIT_POINTS = 80;       // точек на круг для плавной траектории
+function getEquatorialOrbitPositions(numPoints) {
+    numPoints = numPoints || EQUATORIAL_ORBIT_POINTS;
+    var R = EQUATORIAL_ORBIT_RADIUS_KM;
+    var out = [];
+    for (var i = 0; i < numPoints; i++) {
+        var t = (i / numPoints) * 2 * Math.PI;
+        out.push([R * Math.cos(t), R * Math.sin(t), 0]);
+    }
+    return out;
+}
 
 // Common layout settings for Plotly
 const commonLayout = {
@@ -38,6 +52,112 @@ const commonLayout = {
 // Last loaded mission data (for resize redraw without refetch)
 let lastMissionData = null;
 
+// Radar animation: sweep angle (rad), drift offset (px), animation id
+let radarSweepAngle = 0;
+let radarAnimationId = null;
+let radarDriftOffset = 0;
+const RADAR_DRIFT_SPEED = 0.12;
+
+// Orbit chart: animate ship along trajectory (trace index for "Корабль")
+let orbitShipAnimationId = null;
+let orbitChartUserDragging = false; // true while mouse down on plot → skip restyle so rotation is smooth
+const ORBIT_SHIP_LOOP_MS = 120000; // один полный круг по экватору за 2 минуты
+// User-selected action per debris (object_id): 'monitor' | 'capture' | 'avoid'
+let debrisSelectedAction = {};
+let debrisRemovedFromMap = {};  // object_id -> true: утилизация — скрыть с карты
+let debrisAvoided = {};        // object_id -> true: обход — рисовать сзади
+var dismissedAnomalyKeys = {}; // ключи устранённых аномалий (одно «Устранить» — одна аномалия)
+var noAnomalyPanelDismissed = false; // закрыла зелёное окно — больше не показывать
+var dangerPanelShowTimeoutId = null;  // задержка перед показом красного окна (не так быстро)
+var DANGER_PANEL_DELAY_MS = 6000;    // 6 сек до показа панели опасности
+let orbitPopupCurrentObjectId = null;
+let orbitPopupActionsBound = false;
+const ORBIT_SHIP_FPS = 5; // update ship at 5fps when not dragging; paused while user rotates
+// Отложенный рендер орбиты: пока пользователь держит мышь на сфере — не обновляем; после отпускания — один раз отрисуем
+var orbitChartDeferredRender = false;
+
+function scheduleOrbitChartRender(data) {
+    if (orbitChartUserDragging) {
+        orbitChartDeferredRender = true;
+        return;
+    }
+    renderOrbitChart(data);
+}
+
+document.addEventListener('mouseup', function() {
+    orbitChartUserDragging = false;
+    if (orbitChartDeferredRender && lastMissionData) {
+        orbitChartDeferredRender = false;
+        renderOrbitChart(lastMissionData);
+    }
+    startOrbitShipAnimation();
+});
+document.addEventListener('mouseleave', function() {
+    orbitChartUserDragging = false;
+    if (orbitChartDeferredRender && lastMissionData) {
+        orbitChartDeferredRender = false;
+        renderOrbitChart(lastMissionData);
+    }
+    startOrbitShipAnimation();
+});
+
+function startOrbitShipAnimation() {
+    var orbitChartEl = document.getElementById('orbit-chart');
+    if (!orbitChartEl || !orbitChartEl.data || orbitChartEl.data.length < 4) return;
+    if (orbitShipAnimationId != null) return;
+    var lastShipRestyleTime = 0;
+    var restyleInterval = ORBIT_SHIP_FPS > 0 ? 1000 / ORBIT_SHIP_FPS : Infinity;
+    // Траектория — экватор (круг в XY), бесконечный цикл
+    var basePositions = getEquatorialOrbitPositions();
+    var fullPath = basePositions.concat(basePositions.slice(1));
+    var pathLen = fullPath.length;
+    function runOrbitShipAnimation() {
+        if (!orbitChartEl || !orbitChartEl.data || orbitChartEl.data.length < 4) {
+            orbitShipAnimationId = null;
+            return;
+        }
+        var duration = ORBIT_SHIP_LOOP_MS;
+        var t = (Date.now() % duration) / duration;
+        var idx = t * (pathLen - 1);
+        var i0 = Math.min(Math.floor(idx), pathLen - 2);
+        var i1 = i0 + 1;
+        var frac = idx - Math.floor(idx);
+        var p0 = fullPath[i0], p1 = fullPath[i1];
+        var x = p0[0] + (p1[0] - p0[0]) * frac;
+        var y = p0[1] + (p1[1] - p0[1]) * frac;
+        var z = p0[2] + (p1[2] - p0[2]) * frac;
+        var now = Date.now();
+        if (!orbitChartUserDragging && restyleInterval < Infinity && (now - lastShipRestyleTime >= restyleInterval)) {
+            lastShipRestyleTime = now;
+            try {
+                Plotly.restyle(orbitChartEl, { x: [[x]], y: [[y]], z: [[z]] }, [3]);
+            } catch (e) {}
+        }
+        orbitShipAnimationId = requestAnimationFrame(runOrbitShipAnimation);
+    }
+    orbitShipAnimationId = requestAnimationFrame(runOrbitShipAnimation);
+}
+
+function getDebrisTypeLabel(type) {
+    var map = { fragment: 'Обломок', rocket_body: 'Корпус ракеты', satellite: 'Фрагмент спутника', tool: 'Инструмент', panel: 'Панель (солнечная/MLI)' };
+    return (map[type] != null ? map[type] : type) || 'Неизвестно';
+}
+function getAnomalyReasonLabel(type) {
+    var map = {
+        TELEMETRY_ANOMALY: 'Телеметрическая аномалия',
+        SENSOR_DEVIATION: 'Отклонение в датчиках',
+        COMM_LOSS: 'Сбой связи',
+        ORIENTATION_ANOMALY: 'Аномалия ориентации',
+        GYRO_DRIFT: 'Дрейф гироскопа',
+        POWER_FLUCTUATION: 'Колебания питания',
+    };
+    return (map[type] != null ? map[type] : type) || 'Аномалия телеметрии';
+}
+function formatTrajectory(velocity) {
+    if (!velocity || !Array.isArray(velocity) || velocity.length < 3) return '—';
+    return velocity[0].toFixed(4) + ', ' + velocity[1].toFixed(4) + ', ' + velocity[2].toFixed(4) + ' km/s';
+}
+
 /** Generate a seed in [0, 2e9] from time (ms) and random component. */
 const MAX_SEED = 2000000000;
 function generateSeed() {
@@ -46,28 +166,60 @@ function generateSeed() {
     return (timePart + randomPart) % (MAX_SEED + 1);
 }
 
+/** Seeds without anomalies (seed % 7 in {0, 1}). */
+const NO_ANOMALY_SEEDS = [0, 1, 7, 8, 14, 15, 21, 22, 28, 29, 35, 36, 42, 43, 49, 50, 56, 57, 63, 64, 70, 71, 77, 78, 84, 85, 91, 92, 98, 99];
+/** Seeds with anomalies (seed % 7 not in {0, 1}). */
+const WITH_ANOMALY_SEEDS = [2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 44, 45, 46, 47, 48];
+
+/** Time-based alternating seed for stream: 50% no-anomaly, 50% with-anomaly. */
+function getAlternatingStreamSeed() {
+    var periodSec = 45;
+    var tick = Math.floor(Date.now() / 1000 / periodSec);
+    var useNoAnomaly = (tick % 2) === 0;
+    var arr = useNoAnomaly ? NO_ANOMALY_SEEDS : WITH_ANOMALY_SEEDS;
+    return arr[tick % arr.length];
+}
+
+const STREAM_REFRESH_INTERVAL_MS = 45000;
+var streamRefreshIntervalId = null;
+
+function startStreamRefresh() {
+    if (streamRefreshIntervalId != null) return;
+    streamRefreshIntervalId = setInterval(function() {
+        var seed = getAlternatingStreamSeed();
+        loadMissionData(seed).catch(function() {});
+    }, STREAM_REFRESH_INTERVAL_MS);
+}
+
 /** Fetch mission data with the given seed and render the dashboard. */
 async function loadMissionData(seed) {
     const url = '/api/mission-data' + (seed != null ? '?seed=' + encodeURIComponent(seed) : '');
-    // #region agent log
-    fetch('http://127.0.0.1:7552/ingest/ded2ad03-5f07-437e-b0e7-36793f4588e3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'17e329'},body:JSON.stringify({sessionId:'17e329',location:'dashboard.js:loadMissionData',message:'loadMissionData_called',data:{seed:seed,url:url},timestamp:Date.now(),hypothesisId:'H4'})}).catch(function(){});
-    // #endregion
     const response = await fetch(url);
-    // #region agent log
-    fetch('http://127.0.0.1:7552/ingest/ded2ad03-5f07-437e-b0e7-36793f4588e3',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'17e329'},body:JSON.stringify({sessionId:'17e329',location:'dashboard.js:fetch_done',message:'loadMissionData_fetch_done',data:{ok:response.ok,status:response.status},timestamp:Date.now(),hypothesisId:'H4'})}).catch(function(){});
-    // #endregion
     if (!response.ok) throw new Error('Mission data request failed');
     const data = await response.json();
     lastMissionData = data;
 
-    renderOrbitChart(data);
+    // Орбиту перерисовываем только при первом показе — сфера не обновляется по таймеру; корабль двигается по lastMissionData в анимации
+    var orbitChartEl = document.getElementById('orbit-chart');
+    var orbitChartNeedsInitialRender = !orbitChartEl || !orbitChartEl.data || orbitChartEl.data.length === 0;
+    if (orbitChartNeedsInitialRender) scheduleOrbitChartRender(data);
+    else {
+        var obstaclesCountEl = document.getElementById('orbit-obstacles-count');
+        if (obstaclesCountEl && data.debris) {
+            var list = data.debris.filter(function(d) { return !debrisRemovedFromMap[String(d.object_id)]; });
+            obstaclesCountEl.textContent = list.length;
+        }
+    }
+
     renderPositionChart(data);
     renderVelocityChart(data);
     renderResourcesChart(data);
     updateVelocityGauge(data);
     updateReadouts(data);
     updateTrajectoryFooter(data);
-    drawRadar(data);
+    drawRadar(data, radarSweepAngle);
+    if (radarAnimationId != null) cancelAnimationFrame(radarAnimationId);
+    radarAnimationId = requestAnimationFrame(runRadarAnimation);
     updateHealthBars(data);
     updateCopilotCards(data);
     updateThreatCount(data);
@@ -129,7 +281,7 @@ function updateTrajectoryFooter(data) {
     if (headingEl) headingEl.textContent = 'NNE 024° HEADING';
 }
 
-function drawRadar(data) {
+function drawRadar(data, sweepAngle) {
     const canvas = document.getElementById('radar-canvas');
     const debrisPos = data.debris_positions || [];
     const positions = data.positions || [];
@@ -142,23 +294,43 @@ function drawRadar(data) {
     const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 8;
 
     ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+    ctx.clip();
 
     // Concentric circles
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.25)';
     ctx.lineWidth = 1;
     for (let i = 1; i <= 4; i++) {
         ctx.beginPath();
         ctx.arc(cx, cy, r * i / 4, 0, Math.PI * 2);
         ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
 
+    // Sweep trail (PPI-style fading cone)
+    if (sweepAngle != null) {
+        const sweepWidth = (30 * Math.PI) / 180;
+        const startAngle = sweepAngle - sweepWidth;
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, 'rgba(0, 212, 255, 0.08)');
+        grad.addColorStop(0.7, 'rgba(0, 212, 255, 0.03)');
+        grad.addColorStop(1, 'rgba(0, 212, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r + 2, startAngle, sweepAngle);
+        ctx.closePath();
+        ctx.fill();
+    }
+
     // Crosshairs
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.15)';
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(cx, cy - r);
@@ -166,6 +338,21 @@ function drawRadar(data) {
     ctx.moveTo(cx - r, cy);
     ctx.lineTo(cx + r, cy);
     ctx.stroke();
+
+    // Sweep line
+    if (sweepAngle != null) {
+        const sx = cx + Math.sin(sweepAngle) * r;
+        const sy = cy - Math.cos(sweepAngle) * r;
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = COLORS.cyan;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
 
     const scPos = positions.length ? positions[positions.length - 1] : [0, 0, 0];
 
@@ -190,12 +377,26 @@ function drawRadar(data) {
         else safeDebris.push({pos: p, dist: dist, dx: dx, dy: dy});
     });
 
-    safeDebris.forEach(d => {
+    const driftSpan = 2 * r + 50;
+    const base = cy - r - 25;
+    function wrapY(y) {
+        let yy = ((y - base) % driftSpan + driftSpan) % driftSpan + base;
+        return yy;
+    }
+    function hash(dx, dy, d) {
+        return Math.abs((dx * 7.3 + dy * 4.1 + (d || 0) * 11) % 1);
+    }
+
+    safeDebris.forEach(function(d, idx) {
         const dist2d = Math.sqrt(d.dx*d.dx + d.dy*d.dy) || 1;
         const maxRange = 500;
         const scale = Math.min(1, maxRange / d.dist);
-        const x = cx + (d.dx / dist2d) * r * scale * 0.75;
-        const y = cy - (d.dy / dist2d) * r * scale * 0.75;
+        let x = cx + (d.dx / dist2d) * r * scale * 0.75;
+        let y = cy - (d.dy / dist2d) * r * scale * 0.75;
+        const h = hash(d.dx, d.dy, d.dist);
+        const speedMul = 0.6 + h * 0.6;
+        y = wrapY(y + radarDriftOffset * speedMul);
+        x += Math.sin(radarDriftOffset * 0.02 + h * 6.28) * 4 + Math.cos(radarDriftOffset * 0.035 + idx * 0.5) * 3;
         ctx.fillStyle = COLORS.green;
         ctx.shadowColor = COLORS.green;
         ctx.shadowBlur = 6;
@@ -205,12 +406,16 @@ function drawRadar(data) {
         ctx.shadowBlur = 0;
     });
 
-    dangerousDebris.forEach(d => {
+    dangerousDebris.forEach(function(d, idx) {
         const dist2d = Math.sqrt(d.dx*d.dx + d.dy*d.dy) || 1;
         const maxRange = 500;
         const scale = Math.min(1, maxRange / d.dist);
-        const x = cx + (d.dx / dist2d) * r * scale * 0.75;
-        const y = cy - (d.dy / dist2d) * r * scale * 0.75;
+        let x = cx + (d.dx / dist2d) * r * scale * 0.75;
+        let y = cy - (d.dy / dist2d) * r * scale * 0.75;
+        const h = hash(d.dx, d.dy, d.dist);
+        const speedMul = 0.6 + (1 - h * 0.5);
+        y = wrapY(y + radarDriftOffset * speedMul);
+        x += Math.sin(radarDriftOffset * 0.025 + h * 4) * 5 + Math.cos(radarDriftOffset * 0.04 + idx * 0.8) * 4;
         ctx.fillStyle = '#ff4444';
         ctx.strokeStyle = '#ff4444';
         ctx.shadowColor = '#ff4444';
@@ -227,6 +432,45 @@ function drawRadar(data) {
         ctx.stroke();
         ctx.shadowBlur = 0;
     });
+
+    const seed = data.seed != null ? Number(data.seed) : 42;
+    const ambientCount = 16;
+    for (let i = 0; i < ambientCount; i++) {
+        const angle = (i * 0.4 + seed * 0.0001) % (Math.PI * 2);
+        const radius = (0.25 + (i % 5) / 5 * 0.6) * r;
+        let ax = cx + Math.sin(angle) * radius;
+        let ay = cy - Math.cos(angle) * radius;
+        const h = (Math.sin(i * 2.1 + seed * 0.01) * 0.5 + 0.5);
+        const speedMul = 0.5 + h * 0.6;
+        ay = wrapY(ay + radarDriftOffset * speedMul);
+        ax += Math.sin(radarDriftOffset * 0.018 + i * 1.2) * 5 + Math.cos(radarDriftOffset * 0.028 + i * 0.7) * 4;
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+        ctx.shadowColor = 'rgba(0, 212, 255, 0.35)';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(ax, ay, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.restore();
+}
+
+function runRadarAnimation() {
+    if (!lastMissionData) {
+        radarAnimationId = null;
+        return;
+    }
+    const dashboard = document.getElementById('dashboard');
+    if (!dashboard || dashboard.classList.contains('dashboard-hidden')) {
+        radarAnimationId = null;
+        return;
+    }
+    radarSweepAngle += 0.012;
+    if (radarSweepAngle >= Math.PI * 2) radarSweepAngle -= Math.PI * 2;
+    radarDriftOffset += RADAR_DRIFT_SPEED;
+    drawRadar(lastMissionData, radarSweepAngle);
+    radarAnimationId = requestAnimationFrame(runRadarAnimation);
 }
 
 function updateHealthBars(data) {
@@ -326,13 +570,17 @@ function updateStatus(data) {
 
 // 3D Orbit visualization
 function renderOrbitChart(data) {
-    const positions = data.positions;
-    const debrisPos = data.debris_positions;
-    
+    // Траектория корабля — экватор (круг в плоскости XY), бесконечное движение
+    const positions = getEquatorialOrbitPositions();
+    const debrisPos = data.debris_positions || [];
+    var allDebris = data.debris || [];
+    var debrisList = allDebris.filter(function(d) { return !debrisRemovedFromMap[String(d.object_id)]; });
+    const scPos = positions[0]; // позиция корабля для линий до мусора (анимация двигает маркер по экватору)
+
     // Generate Earth sphere
     const earthTheta = Array.from({length: 20}, (_, i) => i * Math.PI / 19);
     const earthPhi = Array.from({length: 40}, (_, i) => i * 2 * Math.PI / 39);
-    
+
     const earthX = [], earthY = [], earthZ = [];
     earthTheta.forEach(theta => {
         const row_x = [], row_y = [], row_z = [];
@@ -345,7 +593,7 @@ function renderOrbitChart(data) {
         earthY.push(row_y);
         earthZ.push(row_z);
     });
-    
+
     const traces = [
         // Earth
         {
@@ -358,7 +606,7 @@ function renderOrbitChart(data) {
             opacity: 0.5,
             hoverinfo: 'skip',
         },
-        // Spacecraft trajectory
+        // Spacecraft trajectory — semi-transparent line
         {
             type: 'scatter3d',
             mode: 'lines',
@@ -366,7 +614,7 @@ function renderOrbitChart(data) {
             y: positions.map(p => p[1]),
             z: positions.map(p => p[2]),
             line: {
-                color: COLORS.cyan,
+                color: 'rgba(128, 0, 0, 0.45)',
                 width: 3,
             },
             name: 'Trajectory',
@@ -386,38 +634,148 @@ function renderOrbitChart(data) {
             },
             name: 'Start',
         },
-        // Current position
+        // Our spacecraft (Корабль) — prominent marker
         {
             type: 'scatter3d',
             mode: 'markers',
-            x: [positions[positions.length - 1][0]],
-            y: [positions[positions.length - 1][1]],
-            z: [positions[positions.length - 1][2]],
+            x: [scPos[0]],
+            y: [scPos[1]],
+            z: [scPos[2]],
             marker: {
-                size: 8,
-                color: COLORS.orange,
+                size: 12,
+                color: COLORS.cyan,
                 symbol: 'diamond',
-                line: { color: '#fff', width: 1 },
+                line: { color: '#fff', width: 2 },
             },
-            name: 'Current',
+            name: 'Корабль',
         },
     ];
-    
-    // Add debris (separate safe and dangerous)
-    if (debrisPos.length > 0) {
-        const scPos = positions.length ? positions[positions.length - 1] : [0, 0, 0];
+
+    // Distance lines: ship to nearest N debris (max 5)
+    const N_DISTANCE_LINES = 5;
+    if (debrisList.length > 0) {
+        const sorted = debrisList.slice().sort((a, b) => a.distance_km - b.distance_km);
+        const nearest = sorted.slice(0, N_DISTANCE_LINES);
+        const lineX = [], lineY = [], lineZ = [];
+        nearest.forEach(d => {
+            const p = d.position;
+            lineX.push(scPos[0], p[0], null);
+            lineY.push(scPos[1], p[1], null);
+            lineZ.push(scPos[2], p[2], null);
+        });
+        if (lineX.length > 0) {
+            traces.push({
+                type: 'scatter3d',
+                mode: 'lines',
+                x: lineX,
+                y: lineY,
+                z: lineZ,
+                line: { color: 'rgba(255, 140, 66, 0.5)', width: 1, dash: 'dot' },
+                name: 'Расстояние до мусора',
+                hoverinfo: 'skip',
+            });
+        }
+    }
+
+    // Debris trajectory lines (velocity direction, ~6 km ahead)
+    const TRAJ_SCALE = 6;
+    if (debrisList.length > 0 && debrisList[0].velocity) {
+        const trajX = [], trajY = [], trajZ = [];
+        debrisList.forEach(d => {
+            const p = d.position, v = d.velocity;
+            if (!v || v.length < 3) return;
+            trajX.push(p[0], p[0] + v[0] * TRAJ_SCALE, null);
+            trajY.push(p[1], p[1] + v[1] * TRAJ_SCALE, null);
+            trajZ.push(p[2], p[2] + v[2] * TRAJ_SCALE, null);
+        });
+        if (trajX.length > 0) {
+            traces.push({
+                type: 'scatter3d',
+                mode: 'lines',
+                x: trajX,
+                y: trajY,
+                z: trajZ,
+                line: { color: 'rgba(255, 140, 66, 0.4)', width: 1 },
+                name: 'Траектория мусора',
+                hoverinfo: 'skip',
+            });
+        }
+    }
+
+    // Add debris: обход (сзади) — сначала; затем остальной мусор
+    const sizeToMarker = (size) => Math.max(2, Math.min(14, 2 + (size || 0.5) * 2));
+    const avoidedDebris = debrisList.filter(d => debrisAvoided[String(d.object_id)]);
+    const normalDebris = debrisList.filter(d => !debrisAvoided[String(d.object_id)]);
+    const safeNormal = normalDebris.filter(d => d.distance_km >= 0.1);
+    const dangerousNormal = normalDebris.filter(d => d.distance_km < 0.1);
+
+    if (avoidedDebris.length > 0) {
+        traces.push({
+            type: 'scatter3d',
+            mode: 'markers',
+            x: avoidedDebris.map(d => d.position[0]),
+            y: avoidedDebris.map(d => d.position[1]),
+            z: avoidedDebris.map(d => d.position[2]),
+            customdata: avoidedDebris.map(d => [d.size, d.mass, d.debris_type, d.material || 'Aluminum', d.velocity, d.distance_km, d.relative_velocity_km_s, d.object_id]),
+            marker: {
+                size: avoidedDebris.map(d => sizeToMarker(d.size)),
+                color: COLORS.orange,
+                opacity: 0.45,
+            },
+            text: avoidedDebris.map(d => '(обход) ' + (d.distance_km * 1000).toFixed(0) + ' m'),
+            hoverinfo: 'text',
+            name: 'Мусор (обход, сзади)',
+        });
+    }
+
+    if (normalDebris.length > 0) {
+        if (safeNormal.length > 0) {
+            traces.push({
+                type: 'scatter3d',
+                mode: 'markers',
+                x: safeNormal.map(d => d.position[0]),
+                y: safeNormal.map(d => d.position[1]),
+                z: safeNormal.map(d => d.position[2]),
+                customdata: safeNormal.map(d => [d.size, d.mass, d.debris_type, d.material || 'Aluminum', d.velocity, d.distance_km, d.relative_velocity_km_s, d.object_id]),
+                marker: {
+                    size: safeNormal.map(d => sizeToMarker(d.size)),
+                    color: COLORS.orange,
+                    opacity: 0.7,
+                },
+                text: safeNormal.map(d => `${(d.distance_km * 1000).toFixed(0)} m · ${d.debris_type} · ${d.material || ''}`),
+                hoverinfo: 'text',
+                name: `Мусор (${safeNormal.length})`,
+            });
+        }
+        if (dangerousNormal.length > 0) {
+            traces.push({
+                type: 'scatter3d',
+                mode: 'markers',
+                x: dangerousNormal.map(d => d.position[0]),
+                y: dangerousNormal.map(d => d.position[1]),
+                z: dangerousNormal.map(d => d.position[2]),
+                customdata: dangerousNormal.map(d => [d.size, d.mass, d.debris_type, d.material || 'Aluminum', d.velocity, d.distance_km, d.relative_velocity_km_s, d.object_id]),
+                marker: {
+                    size: dangerousNormal.map(d => sizeToMarker(d.size)),
+                    color: '#ff4444',
+                    opacity: 0.9,
+                    symbol: 'x',
+                    line: { color: '#fff', width: 2 },
+                },
+                text: dangerousNormal.map(d => `${(d.distance_km * 1000).toFixed(0)} m · ${d.debris_type} · ${d.material || ''}`),
+                hoverinfo: 'text',
+                name: `Опасный мусор (${dangerousNormal.length})`,
+            });
+        }
+    }
+    if (debrisList.length === 0 && debrisPos.length > 0) {
         const safeDebris = [];
         const dangerousDebris = [];
-        
         debrisPos.forEach(p => {
             const dist = Math.sqrt((p[0]-scPos[0])**2 + (p[1]-scPos[1])**2 + (p[2]-scPos[2])**2);
-            if (dist < 0.1) {  // Less than 100m - dangerous
-                dangerousDebris.push(p);
-            } else {
-                safeDebris.push(p);
-            }
+            if (dist < 0.1) dangerousDebris.push(p);
+            else safeDebris.push(p);
         });
-        
         if (safeDebris.length > 0) {
             traces.push({
                 type: 'scatter3d',
@@ -425,15 +783,10 @@ function renderOrbitChart(data) {
                 x: safeDebris.map(p => p[0]),
                 y: safeDebris.map(p => p[1]),
                 z: safeDebris.map(p => p[2]),
-                marker: {
-                    size: 3,
-                    color: COLORS.orange,
-                    opacity: 0.6,
-                },
+                marker: { size: 3, color: COLORS.orange, opacity: 0.6 },
                 name: `Debris (${safeDebris.length})`,
             });
         }
-        
         if (dangerousDebris.length > 0) {
             traces.push({
                 type: 'scatter3d',
@@ -441,46 +794,193 @@ function renderOrbitChart(data) {
                 x: dangerousDebris.map(p => p[0]),
                 y: dangerousDebris.map(p => p[1]),
                 z: dangerousDebris.map(p => p[2]),
-                marker: {
-                    size: 12,
-                    color: '#ff4444',
-                    opacity: 0.9,
-                    symbol: 'x',
-                    line: { color: '#fff', width: 2 },
-                },
-                name: `⚠️ ОПАСНЫЙ МУСОР (${dangerousDebris.length})`,
+                marker: { size: 12, color: '#ff4444', opacity: 0.9, symbol: 'x', line: { color: '#fff', width: 2 } },
+                name: `Опасный мусор (${dangerousDebris.length})`,
             });
         }
     }
-    
-    const layout = {
-        ...commonLayout,
-        scene: {
-            xaxis: { 
-                title: 'X (km)', 
-                gridcolor: COLORS.grid,
-                backgroundcolor: COLORS.panel,
-                color: COLORS.textSecondary,
-            },
-            yaxis: { 
-                title: 'Y (km)', 
-                gridcolor: COLORS.grid,
-                backgroundcolor: COLORS.panel,
-                color: COLORS.textSecondary,
-            },
-            zaxis: { 
-                title: 'Z (km)', 
-                gridcolor: COLORS.grid,
-                backgroundcolor: COLORS.panel,
-                color: COLORS.textSecondary,
-            },
-            bgcolor: COLORS.panel,
-            aspectmode: 'cube',
-        },
-        margin: { t: 10, r: 10, b: 10, l: 10 },
+
+    var orbitChartEl = document.getElementById('orbit-chart');
+    var savedCamera = null;
+    if (orbitChartEl && orbitChartEl._fullLayout && orbitChartEl._fullLayout.scene && orbitChartEl._fullLayout.scene.camera) {
+        savedCamera = JSON.parse(JSON.stringify(orbitChartEl._fullLayout.scene.camera));
+    }
+    var sceneLayout = {
+        xaxis: { title: 'X (km)', gridcolor: COLORS.grid, backgroundcolor: COLORS.panel, color: COLORS.textSecondary },
+        yaxis: { title: 'Y (km)', gridcolor: COLORS.grid, backgroundcolor: COLORS.panel, color: COLORS.textSecondary },
+        zaxis: { title: 'Z (km)', gridcolor: COLORS.grid, backgroundcolor: COLORS.panel, color: COLORS.textSecondary },
+        bgcolor: COLORS.panel,
+        aspectmode: 'cube',
+        dragmode: 'orbit',
+        hovermode: 'closest',
     };
-    
-    Plotly.newPlot('orbit-chart', traces, layout, {responsive: true});
+    if (savedCamera) sceneLayout.camera = savedCamera;
+    var layout = Object.assign({}, commonLayout, {
+        scene: sceneLayout,
+        margin: { t: 10, r: 10, b: 10, l: 10 },
+        width: 700,
+        height: 280,
+    });
+    // Фиксированный размер графика — не менять при перерисовке, чтобы сфера всегда вращалась
+    var plotOpts = { responsive: false, scrollZoom: true, displayModeBar: true, modeBarButtonsToRemove: ['lasso2d', 'select2d'] };
+    function afterPlotUpdate() {
+        // После react сфера может перестать крутиться: принудительно включаем орбитальное вращение
+        try { Plotly.relayout(orbitChartEl, { 'scene.dragmode': 'orbit' }); } catch (e) {}
+    }
+    if (orbitChartEl.data && orbitChartEl.data.length > 0) {
+        var reactPromise = Plotly.react(orbitChartEl, traces, layout, plotOpts);
+        if (reactPromise && typeof reactPromise.then === 'function') {
+            reactPromise.then(afterPlotUpdate, afterPlotUpdate);
+        } else {
+            setTimeout(afterPlotUpdate, 50);
+        }
+    } else {
+        var newPlotPromise = Plotly.newPlot(orbitChartEl, traces, layout, plotOpts);
+        if (newPlotPromise && typeof newPlotPromise.then === 'function') {
+            newPlotPromise.then(afterPlotUpdate, afterPlotUpdate);
+        } else {
+            setTimeout(afterPlotUpdate, 50);
+        }
+    }
+
+    // Панель «Преград» не скрываем никогда; только обновляем счётчик (при утилизации/обходе — на 1 меньше)
+    var obstaclesCountEl = document.getElementById('orbit-obstacles-count');
+    if (obstaclesCountEl) obstaclesCountEl.textContent = debrisList.length;
+
+    // Сфера должна ВСЕГДА крутиться: вешаем mousedown один раз, иначе после утилизации вращение «застывает»
+    if (!orbitChartEl._orbitChartMouseBound) {
+        orbitChartEl._orbitChartMouseBound = true;
+        orbitChartEl.addEventListener('mousedown', function(ev) {
+            if (!ev.target || !ev.target.closest || ev.target.closest('.modebar-container')) return;
+            orbitChartUserDragging = true;
+            if (orbitShipAnimationId != null) {
+                cancelAnimationFrame(orbitShipAnimationId);
+                orbitShipAnimationId = null;
+            }
+        }, true);
+    }
+
+    // Ship at 5fps when idle; loop is stopped while dragging and restarted on mouseup
+    if (orbitShipAnimationId != null) {
+        cancelAnimationFrame(orbitShipAnimationId);
+        orbitShipAnimationId = null;
+    }
+    startOrbitShipAnimation();
+
+    // Click on debris (orange/red points): show size, mass, material, type, trajectory, distance, TTC, recommendation
+    orbitChartEl.on('plotly_click', function(data) {
+        if (!data.points || data.points.length === 0) return;
+        const pt = data.points[0];
+        const cd = pt.customdata;
+        if (!cd || !Array.isArray(cd) || cd.length < 2) return;
+        const baseSize = cd[0], baseMass = cd[1], material = (cd[3] != null ? cd[3] : 'Aluminum');
+        const debrisType = cd[2], velocity = cd[4];
+        const distanceKm = cd[5], relVelKmS = cd[6], objectId = cd[7];
+        const size = (baseSize || 0.5) * (0.85 + Math.random() * 0.3);
+        const massDisplay = Math.min(80, (baseMass || 50) * (0.08 + Math.random() * 0.25));
+        const popup = document.getElementById('orbit-debris-popup');
+        if (popup) {
+            orbitPopupCurrentObjectId = objectId;
+            document.getElementById('orbit-popup-size').textContent = size.toFixed(2);
+            document.getElementById('orbit-popup-mass').textContent = massDisplay.toFixed(1);
+            var matEl = document.getElementById('orbit-popup-material');
+            if (matEl) matEl.textContent = material;
+            var typeEl = document.getElementById('orbit-popup-type');
+            if (typeEl) typeEl.textContent = getDebrisTypeLabel(debrisType);
+            var trajEl = document.getElementById('orbit-popup-trajectory');
+            if (trajEl) trajEl.textContent = formatTrajectory(velocity);
+            var distEl = document.getElementById('orbit-popup-distance');
+            if (distEl) distEl.textContent = distanceKm != null ? (distanceKm * 1000).toFixed(0) + ' m' : '—';
+            var ttcEl = document.getElementById('orbit-popup-ttc');
+            if (ttcEl) {
+                if (relVelKmS != null && relVelKmS > 1e-6 && distanceKm != null) {
+                    var ttcSec = distanceKm / relVelKmS;
+                    ttcEl.textContent = ttcSec >= 60 ? (ttcSec / 60).toFixed(1) + ' min' : ttcSec.toFixed(1) + ' s';
+                } else ttcEl.textContent = '—';
+            }
+            var recEl = document.getElementById('orbit-popup-recommendation');
+            var recDescEl = document.getElementById('orbit-popup-recommendation-desc');
+            var suggestionLabel = '—';
+            var suggestionDesc = '';
+            var oidStr = objectId != null ? String(objectId) : '';
+            var sug = (lastMissionData && lastMissionData.elimination_suggestions && oidStr)
+                ? lastMissionData.elimination_suggestions.find(function(s) { return String(s.object_id) === oidStr; })
+                : null;
+            var currentSuggestion = (debrisSelectedAction[oidStr] != null)
+                ? debrisSelectedAction[oidStr]
+                : ((sug && sug.suggestion) ? sug.suggestion : 'monitor');
+            if (debrisSelectedAction[oidStr] != null) {
+                suggestionLabel = currentSuggestion === 'avoid' ? 'Обход' : currentSuggestion === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
+                suggestionDesc = 'Выбрано пользователем';
+            } else if (sug) {
+                suggestionLabel = currentSuggestion === 'avoid' ? 'Обход' : currentSuggestion === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
+                suggestionDesc = sug.reason || '';
+            }
+            if (recEl) recEl.textContent = suggestionLabel;
+            if (recDescEl) recDescEl.textContent = suggestionDesc;
+            var actionMonitor = document.getElementById('orbit-popup-action-monitor');
+            var actionCapture = document.getElementById('orbit-popup-action-capture');
+            var actionAvoid = document.getElementById('orbit-popup-action-avoid');
+            [actionMonitor, actionCapture, actionAvoid].forEach(function(el) {
+                if (el) el.classList.remove('active');
+            });
+            if (currentSuggestion === 'monitor' && actionMonitor) actionMonitor.classList.add('active');
+            else if (currentSuggestion === 'capture' && actionCapture) actionCapture.classList.add('active');
+            else             if (currentSuggestion === 'avoid' && actionAvoid) actionAvoid.classList.add('active');
+            popup.style.display = 'block';
+        }
+    });
+
+    var popupCloseBtn = document.getElementById('orbit-popup-close');
+    if (popupCloseBtn && !window._orbitPopupCloseBound) {
+        window._orbitPopupCloseBound = true;
+        popupCloseBtn.addEventListener('click', function() {
+            var p = document.getElementById('orbit-debris-popup');
+            if (p) p.style.display = 'none';
+        });
+    }
+
+    function setPopupAction(action) {
+        if (orbitPopupCurrentObjectId == null) return;
+        var oid = orbitPopupCurrentObjectId;
+        debrisSelectedAction[String(oid)] = action;
+        if (action === 'capture' || action === 'avoid') {
+            debrisRemovedFromMap[String(oid)] = true;
+            var popup = document.getElementById('orbit-debris-popup');
+            if (popup) popup.style.display = 'none';
+            if (action === 'capture') {
+                var noAnomalyPanel = document.getElementById('no-anomaly-panel');
+                if (noAnomalyPanel) noAnomalyPanel.style.display = 'none';
+            }
+            // Сферу не перерисовываем — корабль продолжает двигаться без обновления сцены
+            var obstaclesCountEl = document.getElementById('orbit-obstacles-count');
+            if (obstaclesCountEl && lastMissionData && lastMissionData.debris) {
+                var remaining = lastMissionData.debris.filter(function(d) { return !debrisRemovedFromMap[String(d.object_id)]; });
+                obstaclesCountEl.textContent = remaining.length;
+            }
+        }
+        var recEl = document.getElementById('orbit-popup-recommendation');
+        var recDescEl = document.getElementById('orbit-popup-recommendation-desc');
+        var label = action === 'avoid' ? 'Обход' : action === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
+        if (recEl) recEl.textContent = label;
+        if (recDescEl) recDescEl.textContent = 'Выбрано пользователем';
+        var actionMonitor = document.getElementById('orbit-popup-action-monitor');
+        var actionCapture = document.getElementById('orbit-popup-action-capture');
+        var actionAvoid = document.getElementById('orbit-popup-action-avoid');
+        [actionMonitor, actionCapture, actionAvoid].forEach(function(el) { if (el) el.classList.remove('active'); });
+        if (action === 'monitor' && actionMonitor) actionMonitor.classList.add('active');
+        else if (action === 'capture' && actionCapture) actionCapture.classList.add('active');
+        else if (action === 'avoid' && actionAvoid) actionAvoid.classList.add('active');
+    }
+    var actionMonitor = document.getElementById('orbit-popup-action-monitor');
+    var actionCapture = document.getElementById('orbit-popup-action-capture');
+    var actionAvoid = document.getElementById('orbit-popup-action-avoid');
+    if (!orbitPopupActionsBound) {
+    if (actionMonitor) actionMonitor.addEventListener('click', function() { setPopupAction('monitor'); });
+    if (actionCapture) actionCapture.addEventListener('click', function() { setPopupAction('capture'); });
+    if (actionAvoid) actionAvoid.addEventListener('click', function() { setPopupAction('avoid'); });
+    orbitPopupActionsBound = true;
+    }
 }
 
 // Position telemetry
@@ -678,20 +1178,47 @@ function updateDangerStatus(data) {
             dangerBar.style.background = COLORS.green;
         }
     }
+    const anomalies = data.anomaly_detections || [];
     if (dangerValue) {
-        dangerValue.textContent = (currentDanger * 100).toFixed(0) + '%';
+        var dangerLabel;
+        if (currentDanger >= 0.6) {
+            dangerLabel = 'высокая';
+        } else if (currentDanger >= 0.2 || anomalies.length > 0) {
+            dangerLabel = 'средний';
+        } else {
+            dangerLabel = 'низкий';
+        }
+        dangerValue.textContent = dangerLabel;
         dangerValue.style.color = currentDanger > 0.7 ? '#ff4444' :
                                   currentDanger > 0.4 ? '#ff8c42' :
                                   currentDanger > 0.1 ? '#ffaa00' : COLORS.green;
     }
     
-    // Update stats
+    // Update stats (значения после подписи: уровень опасности, аномалии, топливо)
     const collisionCount = document.getElementById('collision-count');
     const anomalyCount = document.getElementById('anomaly-count');
     const lowFuelCount = document.getElementById('low-fuel-count');
+    const fuelMassEl = document.getElementById('fuel-mass-value');
     if (collisionCount) collisionCount.textContent = (data.collision_warnings || []).length;
-    if (anomalyCount) anomalyCount.textContent = (data.anomaly_detections || []).length;
+    if (anomalyCount) {
+        if (anomalies.length === 0) {
+            anomalyCount.textContent = '0';
+        } else {
+            var maxScore = Math.max.apply(null, anomalies.map(function(a) { return a.score != null ? a.score : 0; }));
+            anomalyCount.textContent = 'АНОМАЛИЯ ' + (maxScore * 100).toFixed(0) + '%';
+        }
+    }
     if (lowFuelCount) lowFuelCount.textContent = (data.low_fuel_warnings || []).length;
+    if (fuelMassEl) {
+        if (anomalies.length > 0) {
+            fuelMassEl.textContent = 'заканчивается';
+        } else {
+            const fuel = data.spacecraft_status && data.spacecraft_status.fuel != null
+                ? data.spacecraft_status.fuel
+                : (data.fuels && data.fuels.length > 0 ? data.fuels[data.fuels.length - 1] : null);
+            fuelMassEl.textContent = fuel != null ? Number(fuel).toFixed(1) : '—';
+        }
+    }
     
     // Update footer status
     const sysStatus = document.getElementById('sys-status');
@@ -747,7 +1274,24 @@ function updateDangerWarnings(data) {
     
     const warnings = [];
     
-    // Collision warnings
+    // Client-side: if any debris is very close, add collision warning
+    const COLLISION_WARNING_KM = 0.05;
+    if (data.debris && Array.isArray(data.debris) && data.debris.length > 0) {
+        var closest = data.debris.reduce(function(acc, d) {
+            var dist = (d && typeof d.distance_km === 'number') ? d.distance_km : 1e9;
+            return dist < acc.dist ? { dist: dist, d: d } : acc;
+        }, { dist: 1e9, d: null });
+        if (closest.dist < COLLISION_WARNING_KM && closest.d) {
+            warnings.push({
+                icon: '⚠️',
+                text: 'Предупреждение о столкновении: объект на расстоянии ' + (closest.dist * 1000).toFixed(0) + ' m',
+                severity: 'HIGH',
+                time: 0,
+            });
+        }
+    }
+    
+    // Collision warnings from backend
     (data.collision_warnings || []).forEach(w => {
         warnings.push({
             icon: '⚠️',
@@ -757,13 +1301,21 @@ function updateDangerWarnings(data) {
         });
     });
     
-    // Anomaly detections
-    (data.anomaly_detections || []).forEach(a => {
+    // Аномалии: считаем только неустранённые для отображения
+    var rawAnomalies = data.anomaly_detections || [];
+    var visibleAnomalies = [];
+    rawAnomalies.forEach(function(a, idx) {
+        var key = 'anomaly_' + (a.time != null ? a.time : 0) + '_' + (a.score != null ? a.score : 0) + '_' + idx;
+        if (dismissedAnomalyKeys[key]) return;
+        visibleAnomalies.push(a);
         warnings.push({
             icon: '🚨',
-            text: `АНОМАЛИЯ! Уровень: ${(a.score * 100).toFixed(1)}%`,
-            severity: a.score > 0.7 ? 'HIGH' : 'MEDIUM',
-            time: a.time,
+            text: 'АНОМАЛИЯ! Уровень: ' + ((a.score != null ? a.score : 0) * 100).toFixed(1) + '%',
+            severity: (a.score != null && a.score > 0.7) ? 'HIGH' : 'MEDIUM',
+            time: a.time != null ? a.time : 0,
+            isAnomaly: true,
+            reason: getAnomalyReasonLabel(a.type),
+            anomalyKey: key,
         });
     });
     
@@ -778,23 +1330,83 @@ function updateDangerWarnings(data) {
     });
     
     if (warnings.length > 0) {
-        dangerPanel.style.display = 'block';
-        dangerContent.innerHTML = warnings.map(w => {
-            const severityClass = w.severity === 'HIGH' ? 'danger-high' : 'danger-medium';
-            return `<div class="danger-warning ${severityClass}">
-                <span class="danger-warning-icon">${w.icon}</span>
-                <span class="danger-warning-text">${w.text}</span>
-                <span class="danger-warning-time">T+${w.time.toFixed(1)}s</span>
-            </div>`;
+        if (!dangerPanelShowTimeoutId) {
+            dangerPanelShowTimeoutId = setTimeout(function() {
+                dangerPanelShowTimeoutId = null;
+                if (dangerPanel) dangerPanel.style.display = 'block';
+            }, DANGER_PANEL_DELAY_MS);
+        }
+        var anomalyWarnings = warnings.filter(function(w) { return w.isAnomaly; });
+        var html = warnings.map(function(w) {
+            var severityClass = w.severity === 'HIGH' ? 'danger-high' : 'danger-medium';
+            var reasonBlock = w.isAnomaly && w.reason
+                ? '<div class="danger-warning-reason">Причина: ' + w.reason + '</div>'
+                : '';
+            var btnBlock = w.isAnomaly && w.anomalyKey
+                ? '<button type="button" class="danger-warning-resolve" data-anomaly-key="' + w.anomalyKey + '">Устранить</button>'
+                : '';
+            return '<div class="danger-warning ' + severityClass + '" data-anomaly-key="' + (w.anomalyKey || '') + '">' +
+                '<span class="danger-warning-icon">' + w.icon + '</span>' +
+                '<div class="danger-warning-body">' +
+                '<span class="danger-warning-text">' + w.text + '</span>' +
+                reasonBlock +
+                btnBlock +
+                '</div>' +
+                '<span class="danger-warning-time">T+' + (w.time != null ? w.time.toFixed(1) : '0') + 's</span>' +
+                '</div>';
         }).join('');
+        if (anomalyWarnings.length > 0) {
+            html += '<div class="danger-resolve-all-wrap"><button type="button" class="danger-warning-resolve-all" id="danger-resolve-all-btn">Устранить все</button></div>';
+        }
+        dangerContent.innerHTML = html;
+        dangerContent.querySelectorAll('.danger-warning-resolve[data-anomaly-key]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var key = btn.getAttribute('data-anomaly-key');
+                if (key) dismissedAnomalyKeys[key] = true;
+                if (lastMissionData) updateDangerWarnings(lastMissionData);
+            });
+        });
+        var resolveAllBtn = document.getElementById('danger-resolve-all-btn');
+        if (resolveAllBtn) {
+            resolveAllBtn.addEventListener('click', function() {
+                anomalyWarnings.forEach(function(w) {
+                    if (w.anomalyKey) dismissedAnomalyKeys[w.anomalyKey] = true;
+                });
+                if (lastMissionData) updateDangerWarnings(lastMissionData);
+            });
+        }
+        var dataForStatus = Object.assign({}, data, { anomaly_detections: visibleAnomalies });
+        updateDangerStatus(dataForStatus);
     } else {
+        if (dangerPanelShowTimeoutId) {
+            clearTimeout(dangerPanelShowTimeoutId);
+            dangerPanelShowTimeoutId = null;
+        }
         dangerPanel.style.display = 'none';
+        var dataForStatusElse = Object.assign({}, data, { anomaly_detections: visibleAnomalies });
+        updateDangerStatus(dataForStatusElse);
+    }
+
+    var noAnomalyPanel = document.getElementById('no-anomaly-panel');
+    if (noAnomalyPanel && !noAnomalyPanelDismissed) {
+        if (typeof visibleAnomalies !== 'undefined' ? visibleAnomalies.length === 0 : (data.anomaly_detections || []).length === 0) {
+            noAnomalyPanel.style.display = 'block';
+        } else {
+            noAnomalyPanel.style.display = 'none';
+        }
     }
 }
 
 // Initialize on page load: cover visible, dashboard hidden; no auto-load.
 function initCover() {
     startLiveTime();
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'no-anomaly-close' || (e.target.closest && e.target.closest('#no-anomaly-close')))) {
+            noAnomalyPanelDismissed = true;
+            var p = document.getElementById('no-anomaly-panel');
+            if (p) p.style.display = 'none';
+        }
+    });
 
     var cover = document.getElementById('cover');
     var dashboard = document.getElementById('dashboard');
@@ -891,6 +1503,7 @@ function initCover() {
                             dashboard.classList.remove('dashboard-hidden');
                             dashboard.classList.add('dashboard-visible');
                         }
+                        startStreamRefresh();
                     })
                     .catch(function(err) {
                         console.error('Error loading mission data:', err);
@@ -916,6 +1529,7 @@ function initCover() {
                             dashboard.classList.remove('dashboard-hidden');
                             dashboard.classList.add('dashboard-visible');
                         }
+                        startStreamRefresh();
                     })
                     .catch(function(err) {
                         console.error('Error loading mission data:', err);
@@ -931,7 +1545,7 @@ function initCover() {
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
-            if (lastMissionData) drawRadar(lastMissionData);
+            if (lastMissionData) drawRadar(lastMissionData, radarSweepAngle);
         }, 250);
     });
 }
