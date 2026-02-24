@@ -1122,3 +1122,7 @@
 {"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 91}, "hypothesisId": "H3", "timestamp": 1771918057946, "location": "web_server.py"}
 {"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918058014, "location": "web_server.py"}
 {"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 91}, "hypothesisId": "H2", "timestamp": 1771918058015, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "18"}}, "hypothesisId": "H2", "timestamp": 1771918102947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 18}, "hypothesisId": "H3", "timestamp": 1771918102947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918103266, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 18}, "hypothesisId": "H2", "timestamp": 1771918103268, "location": "web_server.py"}
