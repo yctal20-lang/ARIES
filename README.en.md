@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <strong>English</strong> · <a href="README.ru.md">Русский</a> · <a href="README.ar.md">العربية</a>
+  <strong>English</strong> · <a href="README.ru.md">Русский</a>
 </p>
 
 ---
