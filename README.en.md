@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="README.en.md">English</a> · <a href="README.ru.md">Русский</a> · <a href="README.ar.md">العربية</a>
+  <strong>English</strong> · <a href="README.ru.md">Русский</a> · <a href="README.ar.md">العربية</a>
 </p>
 
 ---
@@ -223,7 +223,7 @@ Disposal suggestions follow ESA/NASA approaches: laser ablation, net capture, ha
 
 ## Deployment (Render)
 
-The project includes `render.yaml` for one-click deployment:
+The project includes `render.yaml` for deployment:
 
 | Setting | Value |
 |---|---|
