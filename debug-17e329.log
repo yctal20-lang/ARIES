@@ -1126,3 +1126,509 @@
 {"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 18}, "hypothesisId": "H3", "timestamp": 1771918102947, "location": "web_server.py"}
 {"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918103266, "location": "web_server.py"}
 {"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 18}, "hypothesisId": "H2", "timestamp": 1771918103268, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "98"}}, "hypothesisId": "H2", "timestamp": 1771918147948, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 98}, "hypothesisId": "H3", "timestamp": 1771918147950, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918148300, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 98}, "hypothesisId": "H2", "timestamp": 1771918148301, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "20"}}, "hypothesisId": "H2", "timestamp": 1771918192975, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 20}, "hypothesisId": "H3", "timestamp": 1771918192981, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918193375, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 20}, "hypothesisId": "H2", "timestamp": 1771918193376, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "0"}}, "hypothesisId": "H2", "timestamp": 1771918237945, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 0}, "hypothesisId": "H3", "timestamp": 1771918237945, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918238012, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 0}, "hypothesisId": "H2", "timestamp": 1771918238013, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "24"}}, "hypothesisId": "H2", "timestamp": 1771918282956, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 24}, "hypothesisId": "H3", "timestamp": 1771918282957, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918283030, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 24}, "hypothesisId": "H2", "timestamp": 1771918283030, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "7"}}, "hypothesisId": "H2", "timestamp": 1771918327946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 7}, "hypothesisId": "H3", "timestamp": 1771918327946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918328018, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 7}, "hypothesisId": "H2", "timestamp": 1771918328018, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "26"}}, "hypothesisId": "H2", "timestamp": 1771918372948, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 26}, "hypothesisId": "H3", "timestamp": 1771918372948, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918373046, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 26}, "hypothesisId": "H2", "timestamp": 1771918373046, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "14"}}, "hypothesisId": "H2", "timestamp": 1771918417948, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 14}, "hypothesisId": "H3", "timestamp": 1771918417948, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918418016, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 14}, "hypothesisId": "H2", "timestamp": 1771918418016, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "30"}}, "hypothesisId": "H2", "timestamp": 1771918462947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 30}, "hypothesisId": "H3", "timestamp": 1771918462947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918463013, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 30}, "hypothesisId": "H2", "timestamp": 1771918463013, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "21"}}, "hypothesisId": "H2", "timestamp": 1771918507946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 21}, "hypothesisId": "H3", "timestamp": 1771918507947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918508225, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 21}, "hypothesisId": "H2", "timestamp": 1771918508226, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "32"}}, "hypothesisId": "H2", "timestamp": 1771918552947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 32}, "hypothesisId": "H3", "timestamp": 1771918552947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918553018, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 32}, "hypothesisId": "H2", "timestamp": 1771918553019, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "28"}}, "hypothesisId": "H2", "timestamp": 1771918597956, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 28}, "hypothesisId": "H3", "timestamp": 1771918597957, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918598202, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 28}, "hypothesisId": "H2", "timestamp": 1771918598203, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "34"}}, "hypothesisId": "H2", "timestamp": 1771918642954, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 34}, "hypothesisId": "H3", "timestamp": 1771918642955, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918643038, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 34}, "hypothesisId": "H2", "timestamp": 1771918643038, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "35"}}, "hypothesisId": "H2", "timestamp": 1771918687945, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 35}, "hypothesisId": "H3", "timestamp": 1771918687947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918688020, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 35}, "hypothesisId": "H2", "timestamp": 1771918688020, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "38"}}, "hypothesisId": "H2", "timestamp": 1771918732947, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 38}, "hypothesisId": "H3", "timestamp": 1771918732949, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918733020, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 38}, "hypothesisId": "H2", "timestamp": 1771918733021, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "42"}}, "hypothesisId": "H2", "timestamp": 1771918777946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 42}, "hypothesisId": "H3", "timestamp": 1771918777962, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918778040, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 42}, "hypothesisId": "H2", "timestamp": 1771918778040, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "40"}}, "hypothesisId": "H2", "timestamp": 1771918822952, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 40}, "hypothesisId": "H3", "timestamp": 1771918822953, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918823045, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 40}, "hypothesisId": "H2", "timestamp": 1771918823046, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "49"}}, "hypothesisId": "H2", "timestamp": 1771918867946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 49}, "hypothesisId": "H3", "timestamp": 1771918867946, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918868022, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 49}, "hypothesisId": "H2", "timestamp": 1771918868023, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "44"}}, "hypothesisId": "H2", "timestamp": 1771918912954, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 44}, "hypothesisId": "H3", "timestamp": 1771918912955, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1771918913036, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 44}, "hypothesisId": "H2", "timestamp": 1771918913037, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "launch_start", "data": {"host": "0.0.0.0", "port": 5001}, "hypothesisId": "H1", "timestamp": 1772080817119, "location": "run_web_dashboard.py"}
+{"sessionId": "17e329", "message": "run_server_entered", "data": {"host": "0.0.0.0", "port": 5001}, "hypothesisId": "H1", "timestamp": 1772080817119, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "80925625"}}, "hypothesisId": "H2", "timestamp": 1772080927581, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 80925625}, "hypothesisId": "H3", "timestamp": 1772080927582, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772080927668, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 80925625}, "hypothesisId": "H2", "timestamp": 1772080927669, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "39"}}, "hypothesisId": "H2", "timestamp": 1772080973576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 39}, "hypothesisId": "H3", "timestamp": 1772080973576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772080973651, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 39}, "hypothesisId": "H2", "timestamp": 1772080973651, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "63"}}, "hypothesisId": "H2", "timestamp": 1772081018581, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 63}, "hypothesisId": "H3", "timestamp": 1772081018582, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081018664, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 63}, "hypothesisId": "H2", "timestamp": 1772081018665, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "41"}}, "hypothesisId": "H2", "timestamp": 1772081063573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 41}, "hypothesisId": "H3", "timestamp": 1772081063573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081063644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 41}, "hypothesisId": "H2", "timestamp": 1772081063644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "98"}}, "hypothesisId": "H2", "timestamp": 1772081473999, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 98}, "hypothesisId": "H3", "timestamp": 1772081474000, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081474209, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 98}, "hypothesisId": "H2", "timestamp": 1772081474210, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "6"}}, "hypothesisId": "H2", "timestamp": 1772081513569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 6}, "hypothesisId": "H3", "timestamp": 1772081513570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081513640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 6}, "hypothesisId": "H2", "timestamp": 1772081513640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "0"}}, "hypothesisId": "H2", "timestamp": 1772081559070, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 0}, "hypothesisId": "H3", "timestamp": 1772081559071, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081559308, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 0}, "hypothesisId": "H2", "timestamp": 1772081559308, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "7"}}, "hypothesisId": "H2", "timestamp": 1772081658063, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 7}, "hypothesisId": "H3", "timestamp": 1772081658065, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081658331, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 7}, "hypothesisId": "H2", "timestamp": 1772081658333, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "12"}}, "hypothesisId": "H2", "timestamp": 1772081718066, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 12}, "hypothesisId": "H3", "timestamp": 1772081718069, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081718334, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 12}, "hypothesisId": "H2", "timestamp": 1772081718336, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "16"}}, "hypothesisId": "H2", "timestamp": 1772081778055, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 16}, "hypothesisId": "H3", "timestamp": 1772081778056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081778348, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 16}, "hypothesisId": "H2", "timestamp": 1772081778349, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "21"}}, "hypothesisId": "H2", "timestamp": 1772081838067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 21}, "hypothesisId": "H3", "timestamp": 1772081838068, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081838314, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 21}, "hypothesisId": "H2", "timestamp": 1772081838315, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "18"}}, "hypothesisId": "H2", "timestamp": 1772081898069, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 18}, "hypothesisId": "H3", "timestamp": 1772081898070, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081898332, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 18}, "hypothesisId": "H2", "timestamp": 1772081898334, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "20"}}, "hypothesisId": "H2", "timestamp": 1772081958063, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 20}, "hypothesisId": "H3", "timestamp": 1772081958063, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772081958269, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 20}, "hypothesisId": "H2", "timestamp": 1772081958270, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "35"}}, "hypothesisId": "H2", "timestamp": 1772082018060, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 35}, "hypothesisId": "H3", "timestamp": 1772082018062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082018312, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 35}, "hypothesisId": "H2", "timestamp": 1772082018313, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "24"}}, "hypothesisId": "H2", "timestamp": 1772082076760, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 24}, "hypothesisId": "H3", "timestamp": 1772082076761, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082076856, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 24}, "hypothesisId": "H2", "timestamp": 1772082076857, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "42"}}, "hypothesisId": "H2", "timestamp": 1772082098570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 42}, "hypothesisId": "H3", "timestamp": 1772082098570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082098636, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 42}, "hypothesisId": "H2", "timestamp": 1772082098637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "26"}}, "hypothesisId": "H2", "timestamp": 1772082143570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 26}, "hypothesisId": "H3", "timestamp": 1772082143571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082143964, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 26}, "hypothesisId": "H2", "timestamp": 1772082143965, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "49"}}, "hypothesisId": "H2", "timestamp": 1772082188570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 49}, "hypothesisId": "H3", "timestamp": 1772082188571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082188861, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 49}, "hypothesisId": "H2", "timestamp": 1772082188863, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "30"}}, "hypothesisId": "H2", "timestamp": 1772082233567, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 30}, "hypothesisId": "H3", "timestamp": 1772082233568, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082233872, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 30}, "hypothesisId": "H2", "timestamp": 1772082233875, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "56"}}, "hypothesisId": "H2", "timestamp": 1772082278580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 56}, "hypothesisId": "H3", "timestamp": 1772082278582, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082278953, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 56}, "hypothesisId": "H2", "timestamp": 1772082278955, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "32"}}, "hypothesisId": "H2", "timestamp": 1772082323599, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 32}, "hypothesisId": "H3", "timestamp": 1772082323602, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082324064, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 32}, "hypothesisId": "H2", "timestamp": 1772082324071, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "63"}}, "hypothesisId": "H2", "timestamp": 1772082368569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 63}, "hypothesisId": "H3", "timestamp": 1772082368570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082368817, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 63}, "hypothesisId": "H2", "timestamp": 1772082368819, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "34"}}, "hypothesisId": "H2", "timestamp": 1772082413601, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 34}, "hypothesisId": "H3", "timestamp": 1772082413603, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082413896, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 34}, "hypothesisId": "H2", "timestamp": 1772082413897, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "70"}}, "hypothesisId": "H2", "timestamp": 1772082458600, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 70}, "hypothesisId": "H3", "timestamp": 1772082458602, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082458912, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 70}, "hypothesisId": "H2", "timestamp": 1772082458913, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "38"}}, "hypothesisId": "H2", "timestamp": 1772082503595, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 38}, "hypothesisId": "H3", "timestamp": 1772082503597, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082503905, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 38}, "hypothesisId": "H2", "timestamp": 1772082503907, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "77"}}, "hypothesisId": "H2", "timestamp": 1772082549069, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 77}, "hypothesisId": "H3", "timestamp": 1772082549070, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082549298, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 77}, "hypothesisId": "H2", "timestamp": 1772082549299, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "40"}}, "hypothesisId": "H2", "timestamp": 1772082594066, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 40}, "hypothesisId": "H3", "timestamp": 1772082594067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082594324, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 40}, "hypothesisId": "H2", "timestamp": 1772082594325, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "44"}}, "hypothesisId": "H2", "timestamp": 1772082678058, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 44}, "hypothesisId": "H3", "timestamp": 1772082678059, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082678333, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 44}, "hypothesisId": "H2", "timestamp": 1772082678334, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "91"}}, "hypothesisId": "H2", "timestamp": 1772082738066, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 91}, "hypothesisId": "H3", "timestamp": 1772082738067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082738346, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 91}, "hypothesisId": "H2", "timestamp": 1772082738347, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "46"}}, "hypothesisId": "H2", "timestamp": 1772082798061, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 46}, "hypothesisId": "H3", "timestamp": 1772082798062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082798331, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 46}, "hypothesisId": "H2", "timestamp": 1772082798332, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "48"}}, "hypothesisId": "H2", "timestamp": 1772082858066, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 48}, "hypothesisId": "H3", "timestamp": 1772082858067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082858295, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 48}, "hypothesisId": "H2", "timestamp": 1772082858298, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "48"}}, "hypothesisId": "H2", "timestamp": 1772082895045, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 48}, "hypothesisId": "H3", "timestamp": 1772082895046, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082895184, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 48}, "hypothesisId": "H2", "timestamp": 1772082895184, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "0"}}, "hypothesisId": "H2", "timestamp": 1772082908569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 0}, "hypothesisId": "H3", "timestamp": 1772082908569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082908634, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 0}, "hypothesisId": "H2", "timestamp": 1772082908635, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "3"}}, "hypothesisId": "H2", "timestamp": 1772082953569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 3}, "hypothesisId": "H3", "timestamp": 1772082953570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082953636, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 3}, "hypothesisId": "H2", "timestamp": 1772082953637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "7"}}, "hypothesisId": "H2", "timestamp": 1772082999053, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 7}, "hypothesisId": "H3", "timestamp": 1772082999054, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772082999117, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 7}, "hypothesisId": "H2", "timestamp": 1772082999117, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "5"}}, "hypothesisId": "H2", "timestamp": 1772083044062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 5}, "hypothesisId": "H3", "timestamp": 1772083044063, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083044125, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 5}, "hypothesisId": "H2", "timestamp": 1772083044125, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "14"}}, "hypothesisId": "H2", "timestamp": 1772083098057, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 14}, "hypothesisId": "H3", "timestamp": 1772083098058, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083098119, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 14}, "hypothesisId": "H2", "timestamp": 1772083098119, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "9"}}, "hypothesisId": "H2", "timestamp": 1772083158069, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 9}, "hypothesisId": "H3", "timestamp": 1772083158070, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083158351, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 9}, "hypothesisId": "H2", "timestamp": 1772083158353, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "11"}}, "hypothesisId": "H2", "timestamp": 1772083218064, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 11}, "hypothesisId": "H3", "timestamp": 1772083218065, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083218381, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 11}, "hypothesisId": "H2", "timestamp": 1772083218383, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "28"}}, "hypothesisId": "H2", "timestamp": 1772083278055, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 28}, "hypothesisId": "H3", "timestamp": 1772083278056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083278387, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 28}, "hypothesisId": "H2", "timestamp": 1772083278388, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "13"}}, "hypothesisId": "H2", "timestamp": 1772083338061, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 13}, "hypothesisId": "H3", "timestamp": 1772083338062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083338276, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 13}, "hypothesisId": "H2", "timestamp": 1772083338278, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "17"}}, "hypothesisId": "H2", "timestamp": 1772083398079, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 17}, "hypothesisId": "H3", "timestamp": 1772083398080, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083398152, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 17}, "hypothesisId": "H2", "timestamp": 1772083398152, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "42"}}, "hypothesisId": "H2", "timestamp": 1772083450733, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 42}, "hypothesisId": "H3", "timestamp": 1772083450733, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083450803, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 42}, "hypothesisId": "H2", "timestamp": 1772083450804, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "19"}}, "hypothesisId": "H2", "timestamp": 1772083494058, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 19}, "hypothesisId": "H3", "timestamp": 1772083494058, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083494312, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 19}, "hypothesisId": "H2", "timestamp": 1772083494313, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "49"}}, "hypothesisId": "H2", "timestamp": 1772083539061, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 49}, "hypothesisId": "H3", "timestamp": 1772083539062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083539290, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 49}, "hypothesisId": "H2", "timestamp": 1772083539291, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "56"}}, "hypothesisId": "H2", "timestamp": 1772083638067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 56}, "hypothesisId": "H3", "timestamp": 1772083638068, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083638308, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 56}, "hypothesisId": "H2", "timestamp": 1772083638308, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "25"}}, "hypothesisId": "H2", "timestamp": 1772083701798, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 25}, "hypothesisId": "H3", "timestamp": 1772083701799, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083702048, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 25}, "hypothesisId": "H2", "timestamp": 1772083702049, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "27"}}, "hypothesisId": "H2", "timestamp": 1772083758056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 27}, "hypothesisId": "H3", "timestamp": 1772083758057, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083758153, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 27}, "hypothesisId": "H2", "timestamp": 1772083758153, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "70"}}, "hypothesisId": "H2", "timestamp": 1772083818055, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 70}, "hypothesisId": "H3", "timestamp": 1772083818056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083818185, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 70}, "hypothesisId": "H2", "timestamp": 1772083818185, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "31"}}, "hypothesisId": "H2", "timestamp": 1772083878059, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 31}, "hypothesisId": "H3", "timestamp": 1772083878060, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083878321, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 31}, "hypothesisId": "H2", "timestamp": 1772083878322, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "77"}}, "hypothesisId": "H2", "timestamp": 1772083899068, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 77}, "hypothesisId": "H3", "timestamp": 1772083899069, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083899230, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 77}, "hypothesisId": "H2", "timestamp": 1772083899231, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "33"}}, "hypothesisId": "H2", "timestamp": 1772083944060, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 33}, "hypothesisId": "H3", "timestamp": 1772083944062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083944299, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 33}, "hypothesisId": "H2", "timestamp": 1772083944300, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "84"}}, "hypothesisId": "H2", "timestamp": 1772083989067, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 84}, "hypothesisId": "H3", "timestamp": 1772083989068, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772083989299, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 84}, "hypothesisId": "H2", "timestamp": 1772083989302, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "37"}}, "hypothesisId": "H2", "timestamp": 1772084034056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 37}, "hypothesisId": "H3", "timestamp": 1772084034057, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084034125, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 37}, "hypothesisId": "H2", "timestamp": 1772084034125, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "91"}}, "hypothesisId": "H2", "timestamp": 1772084079056, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 91}, "hypothesisId": "H3", "timestamp": 1772084079057, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084079120, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 91}, "hypothesisId": "H2", "timestamp": 1772084079121, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "39"}}, "hypothesisId": "H2", "timestamp": 1772084123576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 39}, "hypothesisId": "H3", "timestamp": 1772084123577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084123640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 39}, "hypothesisId": "H2", "timestamp": 1772084123640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "98"}}, "hypothesisId": "H2", "timestamp": 1772084168571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 98}, "hypothesisId": "H3", "timestamp": 1772084168571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084168634, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 98}, "hypothesisId": "H2", "timestamp": 1772084168634, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "41"}}, "hypothesisId": "H2", "timestamp": 1772084213576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 41}, "hypothesisId": "H3", "timestamp": 1772084213577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084213639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 41}, "hypothesisId": "H2", "timestamp": 1772084213639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "0"}}, "hypothesisId": "H2", "timestamp": 1772084258573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 0}, "hypothesisId": "H3", "timestamp": 1772084258574, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084258637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 0}, "hypothesisId": "H2", "timestamp": 1772084258637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "45"}}, "hypothesisId": "H2", "timestamp": 1772084303580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 45}, "hypothesisId": "H3", "timestamp": 1772084303580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084303640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 45}, "hypothesisId": "H2", "timestamp": 1772084303640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "7"}}, "hypothesisId": "H2", "timestamp": 1772084348578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 7}, "hypothesisId": "H3", "timestamp": 1772084348578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084348642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 7}, "hypothesisId": "H2", "timestamp": 1772084348643, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "47"}}, "hypothesisId": "H2", "timestamp": 1772084393577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 47}, "hypothesisId": "H3", "timestamp": 1772084393578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084393637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 47}, "hypothesisId": "H2", "timestamp": 1772084393637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "14"}}, "hypothesisId": "H2", "timestamp": 1772084438592, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 14}, "hypothesisId": "H3", "timestamp": 1772084438594, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084438768, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 14}, "hypothesisId": "H2", "timestamp": 1772084438769, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "2"}}, "hypothesisId": "H2", "timestamp": 1772084483576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 2}, "hypothesisId": "H3", "timestamp": 1772084483577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084483647, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 2}, "hypothesisId": "H2", "timestamp": 1772084483647, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "21"}}, "hypothesisId": "H2", "timestamp": 1772084528570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 21}, "hypothesisId": "H3", "timestamp": 1772084528571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084528631, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 21}, "hypothesisId": "H2", "timestamp": 1772084528632, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "4"}}, "hypothesisId": "H2", "timestamp": 1772084573575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 4}, "hypothesisId": "H3", "timestamp": 1772084573575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084573673, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 4}, "hypothesisId": "H2", "timestamp": 1772084573674, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "28"}}, "hypothesisId": "H2", "timestamp": 1772084618576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 28}, "hypothesisId": "H3", "timestamp": 1772084618577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084618642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 28}, "hypothesisId": "H2", "timestamp": 1772084618642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "6"}}, "hypothesisId": "H2", "timestamp": 1772084663575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 6}, "hypothesisId": "H3", "timestamp": 1772084663577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084663878, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 6}, "hypothesisId": "H2", "timestamp": 1772084663880, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "35"}}, "hypothesisId": "H2", "timestamp": 1772084708583, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 35}, "hypothesisId": "H3", "timestamp": 1772084708584, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084708649, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 35}, "hypothesisId": "H2", "timestamp": 1772084708650, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "10"}}, "hypothesisId": "H2", "timestamp": 1772084753566, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 10}, "hypothesisId": "H3", "timestamp": 1772084753566, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084753627, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 10}, "hypothesisId": "H2", "timestamp": 1772084753628, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "42"}}, "hypothesisId": "H2", "timestamp": 1772084798574, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 42}, "hypothesisId": "H3", "timestamp": 1772084798575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084798639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 42}, "hypothesisId": "H2", "timestamp": 1772084798639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "12"}}, "hypothesisId": "H2", "timestamp": 1772084843567, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 12}, "hypothesisId": "H3", "timestamp": 1772084843567, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084843634, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 12}, "hypothesisId": "H2", "timestamp": 1772084843635, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "49"}}, "hypothesisId": "H2", "timestamp": 1772084888571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 49}, "hypothesisId": "H3", "timestamp": 1772084888573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084888830, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 49}, "hypothesisId": "H2", "timestamp": 1772084888832, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "16"}}, "hypothesisId": "H2", "timestamp": 1772084933582, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 16}, "hypothesisId": "H3", "timestamp": 1772084933583, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084933642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 16}, "hypothesisId": "H2", "timestamp": 1772084933642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "56"}}, "hypothesisId": "H2", "timestamp": 1772084978584, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 56}, "hypothesisId": "H3", "timestamp": 1772084978585, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772084978646, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 56}, "hypothesisId": "H2", "timestamp": 1772084978646, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "18"}}, "hypothesisId": "H2", "timestamp": 1772085023576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 18}, "hypothesisId": "H3", "timestamp": 1772085023577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085023641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 18}, "hypothesisId": "H2", "timestamp": 1772085023641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "63"}}, "hypothesisId": "H2", "timestamp": 1772085068578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 63}, "hypothesisId": "H3", "timestamp": 1772085068579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085068641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 63}, "hypothesisId": "H2", "timestamp": 1772085068641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "20"}}, "hypothesisId": "H2", "timestamp": 1772085113579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 20}, "hypothesisId": "H3", "timestamp": 1772085113580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085113643, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 20}, "hypothesisId": "H2", "timestamp": 1772085113644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "70"}}, "hypothesisId": "H2", "timestamp": 1772085158576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 70}, "hypothesisId": "H3", "timestamp": 1772085158576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085158647, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 70}, "hypothesisId": "H2", "timestamp": 1772085158647, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "24"}}, "hypothesisId": "H2", "timestamp": 1772085203573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 24}, "hypothesisId": "H3", "timestamp": 1772085203574, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085203639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 24}, "hypothesisId": "H2", "timestamp": 1772085203639, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "77"}}, "hypothesisId": "H2", "timestamp": 1772085248572, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 77}, "hypothesisId": "H3", "timestamp": 1772085248573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085248638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 77}, "hypothesisId": "H2", "timestamp": 1772085248638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "26"}}, "hypothesisId": "H2", "timestamp": 1772085293573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 26}, "hypothesisId": "H3", "timestamp": 1772085293574, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085293642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 26}, "hypothesisId": "H2", "timestamp": 1772085293642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "84"}}, "hypothesisId": "H2", "timestamp": 1772085338577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 84}, "hypothesisId": "H3", "timestamp": 1772085338578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085338640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 84}, "hypothesisId": "H2", "timestamp": 1772085338641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "30"}}, "hypothesisId": "H2", "timestamp": 1772085383579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 30}, "hypothesisId": "H3", "timestamp": 1772085383579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085383640, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 30}, "hypothesisId": "H2", "timestamp": 1772085383641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "91"}}, "hypothesisId": "H2", "timestamp": 1772085428569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 91}, "hypothesisId": "H3", "timestamp": 1772085428570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085428635, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 91}, "hypothesisId": "H2", "timestamp": 1772085428635, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "32"}}, "hypothesisId": "H2", "timestamp": 1772085473578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 32}, "hypothesisId": "H3", "timestamp": 1772085473579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085473643, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 32}, "hypothesisId": "H2", "timestamp": 1772085473643, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "98"}}, "hypothesisId": "H2", "timestamp": 1772085518575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 98}, "hypothesisId": "H3", "timestamp": 1772085518576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085518644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 98}, "hypothesisId": "H2", "timestamp": 1772085518645, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "34"}}, "hypothesisId": "H2", "timestamp": 1772085563570, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 34}, "hypothesisId": "H3", "timestamp": 1772085563571, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085563632, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 34}, "hypothesisId": "H2", "timestamp": 1772085563633, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "0"}}, "hypothesisId": "H2", "timestamp": 1772085608576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 0}, "hypothesisId": "H3", "timestamp": 1772085608577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085608638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 0}, "hypothesisId": "H2", "timestamp": 1772085608638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "38"}}, "hypothesisId": "H2", "timestamp": 1772085653578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 38}, "hypothesisId": "H3", "timestamp": 1772085653579, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085653642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 38}, "hypothesisId": "H2", "timestamp": 1772085653642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "7"}}, "hypothesisId": "H2", "timestamp": 1772085698572, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 7}, "hypothesisId": "H3", "timestamp": 1772085698572, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085698631, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 7}, "hypothesisId": "H2", "timestamp": 1772085698632, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "40"}}, "hypothesisId": "H2", "timestamp": 1772085743584, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 40}, "hypothesisId": "H3", "timestamp": 1772085743584, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085743644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 40}, "hypothesisId": "H2", "timestamp": 1772085743644, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "14"}}, "hypothesisId": "H2", "timestamp": 1772085788580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 14}, "hypothesisId": "H3", "timestamp": 1772085788580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085788641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 14}, "hypothesisId": "H2", "timestamp": 1772085788641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "44"}}, "hypothesisId": "H2", "timestamp": 1772085833573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 44}, "hypothesisId": "H3", "timestamp": 1772085833573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085833632, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 44}, "hypothesisId": "H2", "timestamp": 1772085833632, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "21"}}, "hypothesisId": "H2", "timestamp": 1772085878576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 21}, "hypothesisId": "H3", "timestamp": 1772085878576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085878637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 21}, "hypothesisId": "H2", "timestamp": 1772085878637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "46"}}, "hypothesisId": "H2", "timestamp": 1772085923576, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 46}, "hypothesisId": "H3", "timestamp": 1772085923577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085923638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 46}, "hypothesisId": "H2", "timestamp": 1772085923638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "28"}}, "hypothesisId": "H2", "timestamp": 1772085970866, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 28}, "hypothesisId": "H3", "timestamp": 1772085970866, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772085971024, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 28}, "hypothesisId": "H2", "timestamp": 1772085971024, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "48"}}, "hypothesisId": "H2", "timestamp": 1772086013568, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 48}, "hypothesisId": "H3", "timestamp": 1772086013569, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086013637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 48}, "hypothesisId": "H2", "timestamp": 1772086013638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "35"}}, "hypothesisId": "H2", "timestamp": 1772086058574, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 35}, "hypothesisId": "H3", "timestamp": 1772086058575, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086058665, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 35}, "hypothesisId": "H2", "timestamp": 1772086058666, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "3"}}, "hypothesisId": "H2", "timestamp": 1772086103572, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 3}, "hypothesisId": "H3", "timestamp": 1772086103573, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086103637, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 3}, "hypothesisId": "H2", "timestamp": 1772086103638, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "42"}}, "hypothesisId": "H2", "timestamp": 1772086148577, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 42}, "hypothesisId": "H3", "timestamp": 1772086148578, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086148645, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 42}, "hypothesisId": "H2", "timestamp": 1772086148646, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "5"}}, "hypothesisId": "H2", "timestamp": 1772086193581, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 5}, "hypothesisId": "H3", "timestamp": 1772086193583, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086193654, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 5}, "hypothesisId": "H2", "timestamp": 1772086193655, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "49"}}, "hypothesisId": "H2", "timestamp": 1772086238580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 49}, "hypothesisId": "H3", "timestamp": 1772086238581, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086238641, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 49}, "hypothesisId": "H2", "timestamp": 1772086238642, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "9"}}, "hypothesisId": "H2", "timestamp": 1772086283580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 9}, "hypothesisId": "H3", "timestamp": 1772086283580, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086283648, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 9}, "hypothesisId": "H2", "timestamp": 1772086283648, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "1"}}, "hypothesisId": "H2", "timestamp": 1772086316001, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 1}, "hypothesisId": "H3", "timestamp": 1772086316001, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086316062, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 1}, "hypothesisId": "H2", "timestamp": 1772086316063, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "56"}}, "hypothesisId": "H2", "timestamp": 1772086329051, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 56}, "hypothesisId": "H3", "timestamp": 1772086329051, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086329120, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 56}, "hypothesisId": "H2", "timestamp": 1772086329121, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "56"}}, "hypothesisId": "H2", "timestamp": 1772086361733, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 56}, "hypothesisId": "H3", "timestamp": 1772086361734, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086361802, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 56}, "hypothesisId": "H2", "timestamp": 1772086361802, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_start", "data": {"args": {"seed": "11"}}, "hypothesisId": "H2", "timestamp": 1772086398061, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_start", "data": {"num_steps": 120, "seed": 11}, "hypothesisId": "H3", "timestamp": 1772086398061, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "run_simulation_end", "data": {"steps_done": 120}, "hypothesisId": "H3", "timestamp": 1772086398128, "location": "web_server.py"}
+{"sessionId": "17e329", "message": "mission_data_ok", "data": {"seed": 11}, "hypothesisId": "H2", "timestamp": 1772086398129, "location": "web_server.py"}

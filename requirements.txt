@@ -1,0 +1,5 @@
+# A.R.I.E.S Web Dashboard — production dependencies (Render)
+flask>=3.0.0
+numpy>=1.24.0
+gymnasium>=0.29.0
+gunicorn>=21.2.0
