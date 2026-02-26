@@ -116,7 +116,74 @@ space_debris_ai/
 
 ---
 
-## Quick Start
+## Local Setup
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/yctal20-lang/ARIES.git
+cd ARIES
+```
+
+### 2. Create a virtual environment (recommended)
+
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+**Web dashboard only** (lightweight, no GPU):
+
+```bash
+pip install -r requirements.txt
+```
+
+**Full system** (PyTorch, training, all models):
+
+```bash
+pip install -r space_debris_ai/requirements.txt
+```
+
+### 4. Run
+
+**Web dashboard:**
+
+```bash
+python run_web_dashboard.py
+```
+
+Open `http://127.0.0.1:5000` in your browser.
+
+Options:
+
+```bash
+python run_web_dashboard.py --port 8080          # custom port
+python run_web_dashboard.py --host 127.0.0.1     # localhost only
+python run_web_dashboard.py --no-debug            # production mode
+```
+
+**Matplotlib dashboard** (saves PNG):
+
+```bash
+python run_dashboard.py --num-steps 120 --seed 42 --save-path mission.png
+```
+
+**Run tests:**
+
+```bash
+pytest space_debris_ai/tests/ -v
+```
+
+---
+
+## Quick Start (Python API)
 
 ### Web Dashboard (no GPU required)
 
@@ -128,10 +195,6 @@ python run_web_dashboard.py
 Open `http://127.0.0.1:5000` — 3D orbit view, telemetry, debris tracking, danger alerts.
 
 ### Full System (requires PyTorch)
-
-```bash
-pip install -r space_debris_ai/requirements.txt
-```
 
 ```python
 from space_debris_ai import SystemConfig
