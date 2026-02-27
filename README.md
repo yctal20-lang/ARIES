@@ -21,8 +21,6 @@ and a real-time web dashboard — built from the ground up in Python.
 
 > **Note:** The free Render instance goes to sleep after ~15 minutes of inactivity. The first request after that may take 30–60 seconds to wake up.
 
----
-
 ## Key Features
 
 | Feature | Description |
