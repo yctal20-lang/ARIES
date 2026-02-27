@@ -19,6 +19,8 @@ and a real-time web dashboard — built from the ground up in Python.
 
 **Live demo:** deployed on [Render](https://render.com) via Flask + Gunicorn.
 
+> **Note:** The demo runs on Render's free tier. After 10–15 minutes of inactivity the service goes to sleep. The first request after that may take 30–60 seconds to wake it up — subsequent requests will be fast.
+
 ---
 
 ## Key Features
