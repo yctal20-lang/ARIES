@@ -9,8 +9,6 @@
   <a href="README.en.md">English</a> · <a href="README.ru.md">Русский</a>
 </p>
 
-> **Note:** The live demo is hosted on Render's free tier. After ~15 minutes of inactivity the service goes to sleep. The first request after that may take 30–60 seconds to wake up — just wait for the page to load.
-
 ---
 
 ## About
@@ -20,6 +18,8 @@ The system combines reinforcement learning agents, neural network modules, physi
 and a real-time web dashboard — built from the ground up in Python.
 
 **Live demo:** deployed on [Render](https://render.com) via Flask + Gunicorn.
+
+> **Note:** the demo runs on Render's free tier. After ~15 minutes of inactivity the service goes to sleep. The first request after that may take 30–60 seconds to wake it up.
 
 ---
 
