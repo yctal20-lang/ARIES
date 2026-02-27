@@ -690,8 +690,8 @@ body {
 
 .gauge-unit {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 70px;
+    left: 98px;
     transform: translate(-50%, 20%);
     font-size: 0.55rem;
     letter-spacing: 0.15em;
