@@ -19,7 +19,8 @@ and a real-time web dashboard — built from the ground up in Python.
 
 **Live demo:** [https://a-r-i-e-s-1.onrender.com](https://a-r-i-e-s-1.onrender.com/) — deployed on Render via Flask + Gunicorn.
 
-> **Note:** The free Render instance goes to sleep after ~15 minutes of inactivity. The first request after that may take 30–60 seconds to wake up.
+> [!IMPORTANT]
+> **The site may take 3–5 minutes to start up.** The free Render instance goes to sleep after ~15 minutes of inactivity. When you open the link for the first time (or after a period of inactivity), please wait 3–5 minutes for the server to fully wake up and load all dependencies. This is normal behavior for free-tier hosting.
 
 ---
 
