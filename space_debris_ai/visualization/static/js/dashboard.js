@@ -62,8 +62,6 @@ const RADAR_DRIFT_SPEED = 0.12;
 let orbitShipAnimationId = null;
 let orbitChartUserDragging = false; // true while mouse down on plot → skip restyle so rotation is smooth
 const ORBIT_SHIP_LOOP_MS = 120000; // один полный круг по экватору за 2 минуты
-// User-selected action per debris (object_id): 'monitor' | 'capture' | 'avoid'
-let debrisSelectedAction = {};
 let debrisRemovedFromMap = {};  // object_id -> true: утилизация — скрыть с карты
 let debrisAvoided = {};        // object_id -> true: обход — рисовать сзади
 // Мусор «к утилизации»: исчезнет со сферы спустя время после выбора утилизации (object_id -> { addedAt: timestamp })
@@ -73,8 +71,12 @@ var dismissedAnomalyKeys = {}; // ключи устранённых аномал
 var noAnomalyPanelDismissed = false; // закрыла зелёное окно — больше не показывать
 var dangerPanelShowTimeoutId = null;  // задержка перед показом красного окна (не так быстро)
 var DANGER_PANEL_DELAY_MS = 6000;    // 6 сек до показа панели опасности
-let orbitPopupCurrentObjectId = null;
-let orbitPopupActionsBound = false;
+var _orbitPopupRelVelKmS = null;
+/** Расстояние до выбранного мусора из симуляции (км), пока попап открыт */
+var _orbitPopupSimDistanceKm = null;
+var _popupArduinoIntervalId = null;
+/** Попап «мусор» открыт — обновлять ARDUINO LIVE по SSE/fetch без проверки style.display */
+var _orbitPopupArduinoOpen = false;
 const ORBIT_SHIP_FPS = 5; // update ship at 5fps when not dragging; paused while user rotates
 // Отложенный рендер орбиты: пока пользователь держит мышь на сфере — не обновляем; после отпускания — один раз отрисуем
 var orbitChartDeferredRender = false;
@@ -201,6 +203,8 @@ function getAnomalyReasonLabel(type) {
         ORIENTATION_ANOMALY: 'Аномалия ориентации',
         GYRO_DRIFT: 'Дрейф гироскопа',
         POWER_FLUCTUATION: 'Колебания питания',
+        MAGNETIC_FIELD: 'Аномалия магнитного поля (Arduino)',
+        VIBRATION_SPIKE: 'Вибрация корпуса (Arduino)',
     };
     return (map[type] != null ? map[type] : type) || 'Аномалия телеметрии';
 }
@@ -918,67 +922,34 @@ function renderOrbitChart(data) {
     }
     startOrbitShipAnimation();
 
-    // Click on debris (orange/red points): show size, mass, material, type, trajectory, distance, TTC, recommendation
+    // Click on debris: show info + Arduino live data
     orbitChartEl.on('plotly_click', function(data) {
         if (!data.points || data.points.length === 0) return;
         const pt = data.points[0];
         const cd = pt.customdata;
         if (!cd || !Array.isArray(cd) || cd.length < 2) return;
-        const baseSize = cd[0], baseMass = cd[1], material = (cd[3] != null ? cd[3] : 'Aluminum');
-        const debrisType = cd[2], velocity = cd[4];
-        const distanceKm = cd[5], relVelKmS = cd[6], objectId = cd[7];
-        const size = (baseSize || 0.5) * (0.85 + Math.random() * 0.3);
-        const massDisplay = Math.min(80, (baseMass || 50) * (0.08 + Math.random() * 0.25));
+        const baseSize = cd[0], debrisType = cd[2], material = cd[3];
+        const velocity = cd[4], distanceKm = cd[5], relVelKmS = cd[6], objectId = cd[7];
         const popup = document.getElementById('orbit-debris-popup');
         if (popup) {
-            orbitPopupCurrentObjectId = objectId;
-            document.getElementById('orbit-popup-size').textContent = size.toFixed(2);
-            document.getElementById('orbit-popup-mass').textContent = massDisplay.toFixed(1);
+            _orbitPopupRelVelKmS = relVelKmS;
+            var sd = (distanceKm != null && distanceKm !== '') ? Number(distanceKm) : null;
+            _orbitPopupSimDistanceKm = (sd != null && !isNaN(sd)) ? sd : null;
+            _orbitPopupArduinoOpen = true;
+            popup.style.display = 'block';
+            var sizeEl = document.getElementById('orbit-popup-size');
+            if (sizeEl) sizeEl.textContent = (baseSize || 0.5).toFixed(2);
             var matEl = document.getElementById('orbit-popup-material');
-            if (matEl) matEl.textContent = material;
+            if (matEl) matEl.textContent = material || 'Aluminum';
             var typeEl = document.getElementById('orbit-popup-type');
             if (typeEl) typeEl.textContent = getDebrisTypeLabel(debrisType);
             var trajEl = document.getElementById('orbit-popup-trajectory');
             if (trajEl) trajEl.textContent = formatTrajectory(velocity);
-            var distEl = document.getElementById('orbit-popup-distance');
-            if (distEl) distEl.textContent = distanceKm != null ? (distanceKm * 1000).toFixed(0) + ' m' : '—';
-            var ttcEl = document.getElementById('orbit-popup-ttc');
-            if (ttcEl) {
-                if (relVelKmS != null && relVelKmS > 1e-6 && distanceKm != null) {
-                    var ttcSec = distanceKm / relVelKmS;
-                    ttcEl.textContent = ttcSec >= 60 ? (ttcSec / 60).toFixed(1) + ' min' : ttcSec.toFixed(1) + ' s';
-                } else ttcEl.textContent = '—';
-            }
-            var recEl = document.getElementById('orbit-popup-recommendation');
-            var recDescEl = document.getElementById('orbit-popup-recommendation-desc');
-            var suggestionLabel = '—';
-            var suggestionDesc = '';
-            var oidStr = objectId != null ? String(objectId) : '';
-            var sug = (lastMissionData && lastMissionData.elimination_suggestions && oidStr)
-                ? lastMissionData.elimination_suggestions.find(function(s) { return String(s.object_id) === oidStr; })
-                : null;
-            var currentSuggestion = (debrisSelectedAction[oidStr] != null)
-                ? debrisSelectedAction[oidStr]
-                : ((sug && sug.suggestion) ? sug.suggestion : 'monitor');
-            if (debrisSelectedAction[oidStr] != null) {
-                suggestionLabel = currentSuggestion === 'avoid' ? 'Обход' : currentSuggestion === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
-                suggestionDesc = 'Выбрано пользователем';
-            } else if (sug) {
-                suggestionLabel = currentSuggestion === 'avoid' ? 'Обход' : currentSuggestion === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
-                suggestionDesc = sug.reason || '';
-            }
-            if (recEl) recEl.textContent = suggestionLabel;
-            if (recDescEl) recDescEl.textContent = suggestionDesc;
-            var actionMonitor = document.getElementById('orbit-popup-action-monitor');
-            var actionCapture = document.getElementById('orbit-popup-action-capture');
-            var actionAvoid = document.getElementById('orbit-popup-action-avoid');
-            [actionMonitor, actionCapture, actionAvoid].forEach(function(el) {
-                if (el) el.classList.remove('active');
+            updatePopupWithArduino();
+            fetchArduinoLive().then(function () {
+                if (_orbitPopupArduinoOpen) updatePopupWithArduino();
             });
-            if (currentSuggestion === 'monitor' && actionMonitor) actionMonitor.classList.add('active');
-            else if (currentSuggestion === 'capture' && actionCapture) actionCapture.classList.add('active');
-            else             if (currentSuggestion === 'avoid' && actionAvoid) actionAvoid.classList.add('active');
-            popup.style.display = 'block';
+            startPopupArduinoPolling();
         }
     });
 
@@ -988,51 +959,11 @@ function renderOrbitChart(data) {
         popupCloseBtn.addEventListener('click', function() {
             var p = document.getElementById('orbit-debris-popup');
             if (p) p.style.display = 'none';
+            _orbitPopupRelVelKmS = null;
+            _orbitPopupSimDistanceKm = null;
+            _orbitPopupArduinoOpen = false;
+            stopPopupArduinoPolling();
         });
-    }
-
-    function setPopupAction(action) {
-        if (orbitPopupCurrentObjectId == null) return;
-        var oid = orbitPopupCurrentObjectId;
-        debrisSelectedAction[String(oid)] = action;
-        if (action === 'capture' || action === 'avoid') {
-            debrisRemovedFromMap[String(oid)] = true;
-            var popup = document.getElementById('orbit-debris-popup');
-            if (popup) popup.style.display = 'none';
-            if (action === 'capture') {
-                var noAnomalyPanel = document.getElementById('no-anomaly-panel');
-                if (noAnomalyPanel) noAnomalyPanel.style.display = 'none';
-                // Мусор исчезнет со сферы не сразу, а через ~6–7 сек после выбора утилизации
-                debrisPendingRemoval[String(oid)] = { addedAt: Date.now() };
-            }
-            // Сферу целиком не перерисовываем — корабль продолжает двигаться без полного обновления сцены
-            var obstaclesCountEl = document.getElementById('orbit-obstacles-count');
-            if (obstaclesCountEl && lastMissionData && lastMissionData.debris) {
-                var remaining = lastMissionData.debris.filter(function(d) { return !debrisRemovedFromMap[String(d.object_id)]; });
-                obstaclesCountEl.textContent = remaining.length;
-            }
-        }
-        var recEl = document.getElementById('orbit-popup-recommendation');
-        var recDescEl = document.getElementById('orbit-popup-recommendation-desc');
-        var label = action === 'avoid' ? 'Обход' : action === 'capture' ? 'Утилизация / захват' : 'Наблюдение';
-        if (recEl) recEl.textContent = label;
-        if (recDescEl) recDescEl.textContent = 'Выбрано пользователем';
-        var actionMonitor = document.getElementById('orbit-popup-action-monitor');
-        var actionCapture = document.getElementById('orbit-popup-action-capture');
-        var actionAvoid = document.getElementById('orbit-popup-action-avoid');
-        [actionMonitor, actionCapture, actionAvoid].forEach(function(el) { if (el) el.classList.remove('active'); });
-        if (action === 'monitor' && actionMonitor) actionMonitor.classList.add('active');
-        else if (action === 'capture' && actionCapture) actionCapture.classList.add('active');
-        else if (action === 'avoid' && actionAvoid) actionAvoid.classList.add('active');
-    }
-    var actionMonitor = document.getElementById('orbit-popup-action-monitor');
-    var actionCapture = document.getElementById('orbit-popup-action-capture');
-    var actionAvoid = document.getElementById('orbit-popup-action-avoid');
-    if (!orbitPopupActionsBound) {
-    if (actionMonitor) actionMonitor.addEventListener('click', function() { setPopupAction('monitor'); });
-    if (actionCapture) actionCapture.addEventListener('click', function() { setPopupAction('capture'); });
-    if (actionAvoid) actionAvoid.addEventListener('click', function() { setPopupAction('avoid'); });
-    orbitPopupActionsBound = true;
     }
 }
 
@@ -1356,6 +1287,45 @@ function updateDangerWarnings(data) {
     
     // Аномалии: считаем только неустранённые для отображения
     var rawAnomalies = data.anomaly_detections || [];
+
+    // Дополнительные аномалии на основе живых датчиков Arduino:
+    // если обнаружено магнитное поле или вибрация, считаем это аномалией.
+    // Флаг _arduinoAnomaliesSuppressed временно отключает их, пока оператор нажал «Устранить все».
+    try {
+        if (typeof _arduinoLive !== 'undefined' && _arduinoLive) {
+            var hasMagAnomaly = _arduinoLive.magnetic === true;
+            var hasVibAnomaly = _arduinoLive.vibration === true;
+            if (!hasMagAnomaly && !hasVibAnomaly) {
+                // как только датчики вернулись в норму — снова разрешаем показывать Arduino‑аномалии
+                _arduinoAnomaliesSuppressed = false;
+            }
+            if (!_arduinoAnomaliesSuppressed && (hasMagAnomaly || hasVibAnomaly)) {
+                var nowSec = Date.now() / 1000;
+                var baseScore = 0.7;
+                if (hasMagAnomaly && hasVibAnomaly) {
+                    baseScore = 0.9;
+                } else if (hasMagAnomaly || hasVibAnomaly) {
+                    baseScore = 0.8;
+                }
+                if (hasMagAnomaly) {
+                    rawAnomalies.push({
+                        time: nowSec,
+                        score: baseScore,
+                        type: 'MAGNETIC_FIELD',
+                    });
+                }
+                if (hasVibAnomaly) {
+                    rawAnomalies.push({
+                        time: nowSec + 0.1,
+                        score: baseScore,
+                        type: 'VIBRATION_SPIKE',
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        // игнорируем ошибки, чтобы не ломать основной поток отрисовки
+    }
     var visibleAnomalies = [];
     rawAnomalies.forEach(function(a, idx) {
         var key = 'anomaly_' + (a.time != null ? a.time : 0) + '_' + (a.score != null ? a.score : 0) + '_' + idx;
@@ -1422,9 +1392,12 @@ function updateDangerWarnings(data) {
         var resolveAllBtn = document.getElementById('danger-resolve-all-btn');
         if (resolveAllBtn) {
             resolveAllBtn.addEventListener('click', function() {
+                // Помечаем все текущие аномалии (включая созданные по данным Arduino) как «устранённые»
                 anomalyWarnings.forEach(function(w) {
                     if (w.anomalyKey) dismissedAnomalyKeys[w.anomalyKey] = true;
                 });
+                // Временно подавляем генерацию новых Arduino‑аномалий, пока состояние датчиков не вернётся в норму
+                _arduinoAnomaliesSuppressed = true;
                 if (lastMissionData) updateDangerWarnings(lastMissionData);
             });
         }
@@ -1449,6 +1422,221 @@ function updateDangerWarnings(data) {
         }
     }
 }
+
+// ── Arduino live sensor data (SSE push + fetch fallback) ───────────────────
+var _arduinoLive = {
+    distance_km: null,
+    magnetic: null,
+    temperature: null,
+    humidity: null,
+    vibration: null,
+    updated_at: null,
+    error: null,
+};
+var _arduinoPrevMagnetic = null;
+var _arduinoAnomaliesSuppressed = false;
+var _arduinoPollingId = null;
+var _arduinoEventSource = null;
+
+function arduinoLiveNum(v) {
+    if (v == null || v === '') return null;
+    var n = typeof v === 'number' ? v : Number(v);
+    return isNaN(n) ? null : n;
+}
+
+function fetchArduinoLive() {
+    return fetch('/api/arduino/live')
+        .then(function (r) {
+            if (!r.ok) {
+                var msg = r.status === 404
+                    ? 'Нет маршрута /api/arduino (установите pyserial, перезапустите сервер)'
+                    : ('HTTP ' + r.status);
+                _arduinoLive = Object.assign({}, _arduinoLive, { error: msg });
+                if (_orbitPopupArduinoOpen) updatePopupWithArduino();
+                return null;
+            }
+            return r.json();
+        })
+        .then(function (data) {
+            if (data && typeof data === 'object') applyArduinoLiveData(data);
+            return data;
+        })
+        .catch(function () {
+            _arduinoLive = Object.assign({}, _arduinoLive, { error: 'Сеть / сервер недоступны' });
+            if (_orbitPopupArduinoOpen) updatePopupWithArduino();
+        });
+}
+
+function applyArduinoLiveData(data) {
+    if (!data || typeof data !== 'object') return;
+    _arduinoLive = Object.assign({}, _arduinoLive, data);
+
+    // При первом обнаружении магнитного поля от Arduino сразу показываем окно с аномалией,
+    // чтобы не ждать следующего обновления телеметрии миссии.
+    try {
+        var prevMag = _arduinoPrevMagnetic;
+        var nowMag = _arduinoLive && _arduinoLive.magnetic === true;
+        _arduinoPrevMagnetic = _arduinoLive ? _arduinoLive.magnetic : null;
+        if (!prevMag && nowMag) {
+            var dangerPanel = document.getElementById('danger-panel');
+            var dangerContent = document.getElementById('danger-content');
+            if (dangerPanel && dangerContent) {
+                var tSec = Date.now() / 1000;
+                var reason = getAnomalyReasonLabel('MAGNETIC_FIELD');
+                var text = 'АНОМАЛИЯ! Обнаружено магнитное поле (Arduino).';
+                var html = '<div class="danger-warning danger-high">' +
+                    '<span class="danger-warning-icon">🚨</span>' +
+                    '<div class="danger-warning-body">' +
+                    '<span class="danger-warning-text">' + text + '</span>' +
+                    (reason ? '<div class="danger-warning-reason">Причина: ' + reason + '</div>' : '') +
+                    '</div>' +
+                    '<span class="danger-warning-time">T+' + tSec.toFixed(1) + 's</span>' +
+                    '</div>';
+                dangerContent.innerHTML = html;
+                dangerPanel.style.display = 'block';
+            }
+        }
+    } catch (e) {
+        // не даём сбойнуть всей панели, если что-то пошло не так
+    }
+    if (_orbitPopupArduinoOpen) {
+        updatePopupWithArduino();
+    }
+}
+
+function updateOrbitPopupTtc() {
+    var ttcEl = document.getElementById('orbit-popup-ttc');
+    if (!ttcEl || !_orbitPopupArduinoOpen) return;
+    var distKm = _arduinoLive.distance_km != null ? _arduinoLive.distance_km : _orbitPopupSimDistanceKm;
+    var rv = _orbitPopupRelVelKmS;
+    if (distKm != null && rv != null && rv > 1e-6) {
+        var ttcSec = distKm / rv;
+        ttcEl.textContent = ttcSec >= 60 ? (ttcSec / 60).toFixed(1) + ' min' : ttcSec.toFixed(1) + ' s';
+    } else {
+        ttcEl.textContent = '—';
+    }
+}
+
+function startArduinoPolling() {
+    if (_arduinoEventSource || _arduinoPollingId) return;
+    if (typeof EventSource !== 'undefined') {
+        try {
+            _arduinoEventSource = new EventSource('/api/arduino/stream');
+            _arduinoEventSource.onmessage = function (ev) {
+                try {
+                    applyArduinoLiveData(JSON.parse(ev.data));
+                } catch (e) { /* ignore */ }
+            };
+            _arduinoEventSource.onerror = function () {
+                /* браузер переподключает EventSource сам */
+            };
+            fetchArduinoLive();
+            return;
+        } catch (e) {
+            _arduinoEventSource = null;
+        }
+    }
+    fetchArduinoLive();
+    _arduinoPollingId = setInterval(fetchArduinoLive, 80);
+}
+
+function stopArduinoPolling() {
+    if (_arduinoEventSource) {
+        _arduinoEventSource.close();
+        _arduinoEventSource = null;
+    }
+    if (_arduinoPollingId) {
+        clearInterval(_arduinoPollingId);
+        _arduinoPollingId = null;
+    }
+}
+
+function startArduinoAutoConnect() {
+    var p = '';
+    try {
+        p = (localStorage.getItem('arduino_serial_port') || '').trim();
+    } catch (e) { /* ignore */ }
+    var body = p ? JSON.stringify({ port: p }) : '{}';
+    fetch('/api/arduino/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body,
+    }).catch(function () {});
+}
+
+function updatePopupWithArduino() {
+    var distEl = document.getElementById('orbit-popup-distance');
+    var magEl = document.getElementById('orbit-popup-magnetic');
+    var tempEl = document.getElementById('orbit-popup-temp');
+    var vibEl = document.getElementById('orbit-popup-vibration');
+    var dotEl = document.getElementById('ard-live-dot');
+    var d = _arduinoLive;
+    var hasData = !!(d && d.updated_at != null);
+    var err = d && d.error;
+
+    if (dotEl) {
+        if (err) {
+            dotEl.style.background = '#f97316';
+            dotEl.style.boxShadow = '0 0 6px #f97316';
+            dotEl.title = String(err);
+        } else {
+            dotEl.title = '';
+            dotEl.style.background = hasData ? '#22c55e' : '#64748b';
+            dotEl.style.boxShadow = hasData ? '0 0 6px #22c55e' : 'none';
+        }
+    }
+
+    // Только датчик расстояния (ультразвук → км в скетче); симуляция орбиты не подмешиваем
+    if (distEl) {
+        var distKm = arduinoLiveNum(d.distance_km);
+        distEl.textContent = (distKm != null) ? distKm.toFixed(1) + ' km' : '—';
+    }
+    if (magEl) {
+        if (d.magnetic === true) {
+            magEl.textContent = 'Обнаружено';
+            magEl.style.color = '#ff5555';
+        } else if (d.magnetic === false) {
+            magEl.textContent = 'Нет';
+            magEl.style.color = '#22c55e';
+        } else {
+            magEl.textContent = '—';
+            magEl.style.color = '';
+        }
+    }
+    if (tempEl) {
+        var t = arduinoLiveNum(d.temperature);
+        tempEl.textContent = (t != null) ? t.toFixed(1) + ' °C' : '—';
+    }
+    if (vibEl) {
+        if (d.vibration === true) {
+            vibEl.textContent = 'Да';
+            vibEl.style.color = '#f97316';
+        } else if (d.vibration === false) {
+            vibEl.textContent = 'Нет';
+            vibEl.style.color = '#22c55e';
+        } else {
+            vibEl.textContent = '—';
+            vibEl.style.color = '';
+        }
+    }
+    updateOrbitPopupTtc();
+}
+
+function startPopupArduinoPolling() {
+    stopPopupArduinoPolling();
+    fetchArduinoLive();
+    _popupArduinoIntervalId = setInterval(function () {
+        fetchArduinoLive();
+    }, 50);
+}
+
+function stopPopupArduinoPolling() {
+    if (_popupArduinoIntervalId) {
+        clearInterval(_popupArduinoIntervalId);
+        _popupArduinoIntervalId = null;
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Initialize on page load: cover visible, dashboard hidden; no auto-load.
 function initCover() {
@@ -1603,9 +1791,164 @@ function initCover() {
     });
 }
 
+// ── Sensor Log Panel ──────────────────────────────────────────────────────────
+
+(function () {
+    var _logCurrentFile = null;
+    var _logRefreshInterval = null;
+
+    function _parseLogLine(line) {
+        // "[2026-04-03 12:34:56] dist=144.0 km | mag=DETECTED | temp=24.5 °C | hum=65.0 % | vib=YES"
+        var m = line.match(/^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=(.+?)\s*\|\s*vib=(.+)$/);
+        if (!m) return null;
+        return { time: m[1], dist: m[2], mag: m[3].trim(), temp: m[4], hum: m[5], vib: m[6].trim() };
+    }
+
+    function _renderTable(lines) {
+        var tbody = document.getElementById('sensor-log-tbody');
+        var empty = document.getElementById('sensor-log-empty');
+        if (!tbody) return;
+
+        var parsed = [];
+        for (var i = lines.length - 1; i >= 0; i--) {
+            var p = _parseLogLine(lines[i]);
+            if (p) parsed.push(p);
+            if (parsed.length >= 100) break;
+        }
+
+        if (parsed.length === 0) {
+            tbody.innerHTML = '';
+            if (empty) empty.style.display = '';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        var html = '';
+        for (var j = 0; j < parsed.length; j++) {
+            var r = parsed[j];
+            var magClass = r.mag === 'DETECTED' ? 'log-mag-yes' : 'log-mag-no';
+            var vibClass = r.vib === 'YES' ? 'log-vib-yes' : 'log-vib-no';
+            html += '<tr>' +
+                '<td>' + r.time + '</td>' +
+                '<td>' + r.dist + '</td>' +
+                '<td class="' + magClass + '">' + r.mag + '</td>' +
+                '<td>' + r.temp + '</td>' +
+                '<td>' + r.hum + '</td>' +
+                '<td class="' + vibClass + '">' + r.vib + '</td>' +
+                '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+
+    function _loadLogFile(filename) {
+        if (!filename) return;
+        fetch('/api/arduino/logs/' + encodeURIComponent(filename) + '?lines=200')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data || !data.lines) return;
+                _renderTable(data.lines);
+            })
+            .catch(function () {});
+    }
+
+    function _loadLatest() {
+        var el = document.getElementById('sensor-log-latest');
+        if (!el) return;
+        fetch('/api/arduino/logs/latest')
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (text) {
+                if (!text) { el.style.display = 'none'; return; }
+                el.textContent = text;
+                el.style.display = '';
+            })
+            .catch(function () { el.style.display = 'none'; });
+    }
+
+    function _loadIndex() {
+        fetch('/api/arduino/logs')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+
+                var dirEl = document.getElementById('sensor-log-dir');
+                if (dirEl && data.logs_dir) dirEl.textContent = data.logs_dir;
+
+                var sel = document.getElementById('sensor-log-file-select');
+                if (!sel) return;
+                var files = data.files || [];
+
+                if (files.length === 0) {
+                    sel.innerHTML = '<option value="">— нет файлов —</option>';
+                    _logCurrentFile = null;
+                    return;
+                }
+
+                var prevVal = sel.value || (files[0] && files[0].filename);
+                sel.innerHTML = '';
+                files.forEach(function (f) {
+                    var opt = document.createElement('option');
+                    opt.value = f.filename;
+                    opt.textContent = f.filename + ' (' + Math.ceil(f.size_bytes / 1024) + ' KB)';
+                    sel.appendChild(opt);
+                });
+                // Restore selection or default to newest
+                sel.value = prevVal || files[0].filename;
+                _logCurrentFile = sel.value;
+                _loadLogFile(_logCurrentFile);
+            })
+            .catch(function () {});
+    }
+
+    function _refreshAll() {
+        _loadLatest();
+        if (_logCurrentFile) {
+            _loadLogFile(_logCurrentFile);
+        } else {
+            _loadIndex();
+        }
+    }
+
+    function initSensorLog() {
+        var refreshBtn = document.getElementById('sensor-log-refresh');
+        var sel = document.getElementById('sensor-log-file-select');
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                _loadIndex();
+                _loadLatest();
+            });
+        }
+
+        if (sel) {
+            sel.addEventListener('change', function () {
+                _logCurrentFile = sel.value;
+                _loadLogFile(_logCurrentFile);
+            });
+        }
+
+        _loadIndex();
+        _loadLatest();
+
+        // Auto-refresh every 5 seconds
+        _logRefreshInterval = setInterval(_refreshAll, 5000);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSensorLog);
+    } else {
+        initSensorLog();
+    }
+})();
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCover);
+    document.addEventListener('DOMContentLoaded', function () {
+        initCover();
+        startArduinoAutoConnect();
+        startArduinoPolling();
+    });
 } else {
     initCover();
+    startArduinoAutoConnect();
+    startArduinoPolling();
 }
 

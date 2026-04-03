@@ -112,23 +112,20 @@
                     <div class="orbit-popup-cols">
                         <div class="orbit-popup-col orbit-popup-col-left">
                             Размер: <span id="orbit-popup-size">—</span> m<br>
-                            Вес: <span id="orbit-popup-mass">—</span> kg<br>
                             Материал: <span id="orbit-popup-material">—</span><br>
                             Тип: <span id="orbit-popup-type">—</span><br>
                             Траектория: <span id="orbit-popup-trajectory">—</span>
                         </div>
                         <div class="orbit-popup-col orbit-popup-col-right">
+                            <div class="ard-sensor-block">
+                                <span class="ard-sensor-label">ARDUINO LIVE</span>
+                                <span class="ard-sensor-dot" id="ard-live-dot"></span>
+                            </div>
                             Расстояние: <span id="orbit-popup-distance">—</span><br>
+                            Магнитное поле: <span id="orbit-popup-magnetic">—</span><br>
+                            Температура: <span id="orbit-popup-temp">—</span><br>
                             Время до столкновения: <span id="orbit-popup-ttc">—</span><br>
-                            Рекомендация: <span id="orbit-popup-recommendation">—</span><br>
-                            <span id="orbit-popup-recommendation-desc" class="orbit-popup-desc"></span>
                         </div>
-                    </div>
-                    <div class="orbit-popup-actions">
-                        <span class="orbit-popup-actions-label">Действие:</span>
-                        <button type="button" id="orbit-popup-action-monitor" class="orbit-popup-action" data-action="monitor">Наблюдение</button>
-                        <button type="button" id="orbit-popup-action-capture" class="orbit-popup-action" data-action="capture">Утилизация</button>
-                        <button type="button" id="orbit-popup-action-avoid" class="orbit-popup-action" data-action="avoid">Обход</button>
                     </div>
                 </div>
                 <div class="trajectory-footer">
@@ -231,6 +228,35 @@
         <div class="glass-panel">
             <div class="panel-label">Resources</div>
             <div id="resources-chart" class="chart chart-small"></div>
+        </div>
+    </section>
+
+    <!-- Arduino Sensor Log panel -->
+    <section class="dashboard-secondary sensor-log-section">
+        <div class="glass-panel sensor-log-panel">
+            <div class="panel-label">
+                Arduino Sensor Log
+                <span class="sensor-log-dir" id="sensor-log-dir" title="Папка на диске"></span>
+                <button type="button" id="sensor-log-refresh" class="sensor-log-refresh-btn" title="Обновить">↻</button>
+                <select id="sensor-log-file-select" class="sensor-log-select"></select>
+            </div>
+            <div id="sensor-log-latest" class="sensor-log-latest"></div>
+            <div id="sensor-log-table-wrap" class="sensor-log-table-wrap">
+                <table class="sensor-log-table">
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Расстояние</th>
+                            <th>Магнитное поле</th>
+                            <th>Температура</th>
+                            <th>Влажность</th>
+                            <th>Вибрация</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sensor-log-tbody"></tbody>
+                </table>
+                <div id="sensor-log-empty" class="sensor-log-empty" style="display:none;">Нет данных. Подключите Arduino и запустите считывание.</div>
+            </div>
         </div>
     </section>
 

@@ -11,8 +11,9 @@ A.R.I.E.S Web Dashboard Launcher.
 Если порт 5000 занят, попробуйте: python run_web_dashboard.py --port 5001
 """
 
-import sys
 import argparse
+import os
+import sys
 from pathlib import Path
 
 # Add space_debris_ai to path
@@ -43,8 +44,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A.R.I.E.S Web Dashboard")
     parser.add_argument("--host", default="0.0.0.0", help="Host (default: 0.0.0.0 — доступ с других устройств)")
     parser.add_argument("--port", type=int, default=5000, help="Port (default: 5000)")
+    parser.add_argument(
+        "--arduino-port",
+        default=None,
+        metavar="COMx",
+        help="Serial-порт Arduino (Windows: COM3, COM8, …). Либо задайте ARDUINO_PORT, либо файл space_debris_ai/arduino_bridge/arduino_port.txt",
+    )
     parser.add_argument("--no-debug", action="store_true", help="Disable Flask debug mode")
     args = parser.parse_args()
+    if args.arduino_port:
+        os.environ["ARDUINO_PORT"] = str(args.arduino_port).strip()
     # #region agent log
     _dlog("launch_start", {"host": args.host, "port": args.port}, "H1")
     # #endregion

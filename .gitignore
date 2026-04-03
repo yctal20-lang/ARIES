@@ -9,3 +9,6 @@ dist/
 build/
 .venv/
 venv/
+
+# Локальный COM-порт Arduino (не коммитить)
+space_debris_ai/arduino_bridge/arduino_port.txt

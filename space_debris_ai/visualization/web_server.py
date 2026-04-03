@@ -33,6 +33,13 @@ app = Flask(
     static_folder=str(Path(__file__).parent / "static"),
 )
 
+try:
+    from space_debris_ai.arduino_bridge.routes import arduino_bp
+
+    app.register_blueprint(arduino_bp)
+except ImportError:
+    pass
+
 
 def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
     """
@@ -410,9 +417,9 @@ def run_server(host="0.0.0.0", port=5000, debug=True):
             print(f"  С других устройств: http://<IP этого ПК>:{port}")
     print("\nOpen your browser and navigate to the URL above.")
     if host == "0.0.0.0":
-        print("  Если с другого устройства не открывается — разрешите Python в брандмауэре Windows")
-        print("  (Панель управления → Брандмауэр → Доп. параметры → Правила для входящих → Создать правило → Порт TCP 5000).")
-    print("Press Ctrl+C to stop the server.\n")
+        print("  If another device can't connect - allow Python in Windows Firewall (Port TCP 5000).")
+    print("Press Ctrl+C to stop the server.")
+    print("  Arduino: GET /api/arduino/live  |  SSE /api/arduino/stream  (ARDUINO_PORT=COMx, pip install pyserial)\n")
     
     # use_reloader=False при 0.0.0.0 — иначе на Windows сервер может не принимать подключения из сети
     use_reloader = debug and host != "0.0.0.0"

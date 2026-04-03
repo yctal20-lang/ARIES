@@ -1360,12 +1360,13 @@ body {
     left: auto;
     bottom: auto;
     max-width: 320px;
-    padding: 0.5rem 0.75rem;
-    padding-top: 1.5rem;
+    padding: 0.4rem 0.65rem;
+    padding-top: 1.15rem;
     background: var(--glass);
     border: 1px solid var(--neon-cyan);
     border-radius: 6px;
     font-size: 0.75rem;
+    line-height: 1.28;
     color: var(--text-primary);
     z-index: 10;
 }
@@ -1393,17 +1394,17 @@ body {
 }
 .orbit-popup-title {
     display: block;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
 }
 .orbit-popup-cols {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 0.25rem;
+    gap: 0.65rem;
+    margin-bottom: 0.12rem;
 }
 .orbit-popup-col {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.06rem;
     min-width: 0;
 }
 .orbit-popup-col-left { flex: 1; }
@@ -1413,39 +1414,6 @@ body {
     font-size: 0.7rem;
     color: var(--text-muted);
     margin-top: 0.25rem;
-}
-.orbit-popup-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgba(0, 255, 255, 0.2);
-}
-.orbit-popup-actions-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-right: 0.25rem;
-}
-.orbit-popup-action {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: var(--text-muted);
-    cursor: pointer;
-    font-family: inherit;
-}
-.orbit-popup-action:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-.orbit-popup-action.active {
-    background: rgba(0, 255, 255, 0.15);
-    border-color: var(--neon-cyan);
-    color: var(--neon-cyan);
 }
 
 .explore-collision-popup {
@@ -1494,4 +1462,144 @@ body {
 
 .explore-destroy-btn:hover {
     background: rgba(255, 68, 68, 0.5);
+}
+
+/* Arduino live sensor block in debris popup */
+.ard-sensor-block {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.18rem;
+}
+.ard-sensor-label {
+    font-size: 0.6rem;
+    font-family: "Courier New", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--neon-cyan);
+}
+.ard-sensor-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #64748b;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+/* ── Sensor Log Panel ─────────────────────────────── */
+.sensor-log-section {
+    grid-column: 1 / -1;
+    margin: 0.6rem 1rem 0.6rem;
+}
+
+.sensor-log-panel {
+    padding: 0.75rem 1rem;
+}
+
+.sensor-log-panel .panel-label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.55rem;
+}
+
+.sensor-log-dir {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-family: "Courier New", monospace;
+    opacity: 0.7;
+}
+
+.sensor-log-refresh-btn {
+    background: transparent;
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    border-radius: 4px;
+    padding: 0 0.45rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    line-height: 1.5;
+    transition: background 0.2s;
+}
+
+.sensor-log-refresh-btn:hover {
+    background: rgba(0, 255, 255, 0.12);
+}
+
+.sensor-log-select {
+    background: rgba(0, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 255, 0.25);
+    color: var(--text-primary);
+    font-family: "Courier New", monospace;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    cursor: pointer;
+}
+
+.sensor-log-select option {
+    background: #0a0f1e;
+}
+
+.sensor-log-latest {
+    font-family: "Courier New", monospace;
+    font-size: 0.7rem;
+    color: var(--neon-cyan);
+    background: rgba(0, 255, 255, 0.04);
+    border: 1px solid rgba(0, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    margin-bottom: 0.6rem;
+    white-space: pre;
+    display: none;
+}
+
+.sensor-log-table-wrap {
+    overflow-x: auto;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.sensor-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.68rem;
+    font-family: "Courier New", monospace;
+}
+
+.sensor-log-table th {
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.6rem;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    padding: 0.3rem 0.6rem;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    background: #050b1a;
+}
+
+.sensor-log-table td {
+    padding: 0.25rem 0.6rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sensor-log-table tr:hover td {
+    background: rgba(0, 255, 255, 0.04);
+}
+
+.sensor-log-table .log-mag-yes { color: #f59e0b; }
+.sensor-log-table .log-mag-no  { color: var(--text-muted); }
+.sensor-log-table .log-vib-yes { color: #ef4444; }
+.sensor-log-table .log-vib-no  { color: var(--text-muted); }
+
+.sensor-log-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    padding: 1.5rem 0;
 }
