@@ -1,14 +1,12 @@
 # A.R.I.E.S — Autonomous Research & Intelligence Earth Satellite
 
-<p align="center">
-  <strong>Autonomous AI system for orbital debris collection</strong><br>
-  Web UI subtitle: <em>Autonomous Research & Intelligence Earth Satellite</em><br>
-  Deep learning · Reinforcement learning · Sensor fusion · Orbital mechanics
-</p>
+Autonomous AI system for orbital debris collection
 
-<p align="center">
-  <a href="README.en.md">English</a> · <a href="README.ru.md">Русский</a>
-</p>
+Web UI subtitle: *Autonomous Research & Intelligence Earth Satellite*
+
+Deep learning · Reinforcement learning · Sensor fusion · Orbital mechanics
+
+[English](README.en.md) · [Русский](README.ru.md)
 
 ---
 
@@ -29,7 +27,7 @@ and an AetherOS-style real-time web dashboard — mostly in Python.
 ## Key Features
 
 | Feature | Description |
-|---|---|
+| --- | --- |
 | **4-level priority architecture** | Survival → Safety → Mission Critical → Mission Execution |
 | **Physics-informed simulation** | Keplerian orbital mechanics with J2 perturbation, solar pressure, atmospheric drag |
 | **Multi-sensor fusion** | GPS, IMU, Star Tracker with weighted fusion |
@@ -43,7 +41,7 @@ and an AetherOS-style real-time web dashboard — mostly in Python.
 
 ## Architecture
 
-```
+```text
 space_debris_ai/
 ├── core/                              # Base infrastructure
 │   ├── config.py                      # Pydantic configuration & validation
@@ -118,7 +116,7 @@ space_debris_ai/
 ## Priority Levels
 
 | Level | Name | Latency | Reliability | Purpose |
-|:---:|---|---|---|---|
+| :---: | --- | --- | --- | --- |
 | 1 | Survival | < 100 ms | 99.999% | Collision avoidance, navigation |
 | 2 | Safety | < 500 ms | 99.99% | Anomaly detection, power management |
 | 3 | Mission Critical | < 1 s | 99.9% | State prediction, early warning, failure prediction |
@@ -169,7 +167,7 @@ pip install -r space_debris_ai/requirements.txt
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5000` in your browser. On the **cover**, use **Seed** / **Add** (custom seed) or **Start** (default seed); after `/api/mission-data` loads, the mission dashboard appears.
+Open `http://127.0.0.1:5001` in your browser. On the **cover**, use **Seed** / **Add** (custom seed) or **Start** (default seed); after `/api/mission-data` loads, the mission dashboard appears.
 
 For **Arduino**, install `pyserial` and set the port (`ARDUINO_PORT`, `--arduino-port`, or `space_debris_ai/arduino_bridge/arduino_port.txt`). See `space_debris_ai/visualization/WEB_DASHBOARD.md`.
 
@@ -205,7 +203,7 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5000`: **Seed** / **Add** or **Start**, then 3D orbit, charts, radar, and optional Arduino live data (see above).
+Open `http://127.0.0.1:5001`: **Seed** / **Add** or **Start**, then 3D orbit, charts, radar, and optional Arduino live data (see above).
 
 ### Full System (requires PyTorch)
 
@@ -320,7 +318,7 @@ Disposal suggestions (ESA/NASA-style) are provided via API / debris-analysis flo
 The project includes `render.yaml` for one-click deployment:
 
 | Setting | Value |
-|---|---|
+| --- | --- |
 | **Runtime** | Python 3.11 |
 | **Build Command** | `pip install -r requirements.txt` |
 | **Start Command** | `gunicorn space_debris_ai.visualization.web_server:app --bind 0.0.0.0:$PORT` |
@@ -338,7 +336,7 @@ pytest space_debris_ai/tests/ -v
 ## Target Metrics
 
 | Metric | Target |
-|---|---|
+| --- | --- |
 | Collision avoidance | 100% |
 | Debris collection accuracy | > 95% |
 | Fuel efficiency vs classical | +30% |
