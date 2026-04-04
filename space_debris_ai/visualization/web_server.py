@@ -333,7 +333,7 @@ def status():
     
     return jsonify({
         "system": "A.R.I.E.S",
-        "full_name": "Advanced Retrieval & In-Orbit Elimination System",
+        "full_name": "Autonomous Research & Intelligence Earth Satellite",
         "status": status_text,
         "fusion": "ACTIVE",
         "mission": "DEBRIS COLLECTION",

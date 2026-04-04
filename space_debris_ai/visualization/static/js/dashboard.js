@@ -266,9 +266,9 @@ async function loadMissionData(seed) {
         }
     }
 
-    renderPositionChart(data);
-    renderVelocityChart(data);
-    renderResourcesChart(data);
+    if (document.getElementById('position-chart')) renderPositionChart(data);
+    if (document.getElementById('velocity-chart')) renderVelocityChart(data);
+    if (document.getElementById('resources-chart')) renderResourcesChart(data);
     updateVelocityGauge(data);
     updateReadouts(data);
     updateTrajectoryFooter(data);
@@ -1339,6 +1339,7 @@ function updateDangerWarnings(data) {
             isAnomaly: true,
             reason: getAnomalyReasonLabel(a.type),
             anomalyKey: key,
+            immediatePanel: a.type === 'VIBRATION_SPIKE',
         });
     });
     
@@ -1352,8 +1353,15 @@ function updateDangerWarnings(data) {
         });
     });
     
+    var needsImmediatePanel = warnings.some(function(w) { return w.immediatePanel; });
     if (warnings.length > 0) {
-        if (!dangerPanelShowTimeoutId) {
+        if (needsImmediatePanel) {
+            if (dangerPanelShowTimeoutId) {
+                clearTimeout(dangerPanelShowTimeoutId);
+                dangerPanelShowTimeoutId = null;
+            }
+            dangerPanel.style.display = 'block';
+        } else if (!dangerPanelShowTimeoutId) {
             dangerPanelShowTimeoutId = setTimeout(function() {
                 dangerPanelShowTimeoutId = null;
                 if (dangerPanel) dangerPanel.style.display = 'block';
@@ -1434,6 +1442,7 @@ var _arduinoLive = {
     error: null,
 };
 var _arduinoPrevMagnetic = null;
+var _arduinoPrevVibration = null;
 var _arduinoAnomaliesSuppressed = false;
 var _arduinoPollingId = null;
 var _arduinoEventSource = null;
@@ -1471,29 +1480,52 @@ function applyArduinoLiveData(data) {
     if (!data || typeof data !== 'object') return;
     _arduinoLive = Object.assign({}, _arduinoLive, data);
 
-    // При первом обнаружении магнитного поля от Arduino сразу показываем окно с аномалией,
-    // чтобы не ждать следующего обновления телеметрии миссии.
+    // При первом появлении магнитного поля / вибрации с Arduino сразу обновляем панель опасности,
+    // без ожидания следующего loadMissionData (~45 с) и без 6 с задержки для вибрации.
     try {
         var prevMag = _arduinoPrevMagnetic;
+        var prevVib = _arduinoPrevVibration;
         var nowMag = _arduinoLive && _arduinoLive.magnetic === true;
+        var nowVib = _arduinoLive && _arduinoLive.vibration === true;
         _arduinoPrevMagnetic = _arduinoLive ? _arduinoLive.magnetic : null;
-        if (!prevMag && nowMag) {
-            var dangerPanel = document.getElementById('danger-panel');
-            var dangerContent = document.getElementById('danger-content');
-            if (dangerPanel && dangerContent) {
-                var tSec = Date.now() / 1000;
-                var reason = getAnomalyReasonLabel('MAGNETIC_FIELD');
-                var text = 'АНОМАЛИЯ! Обнаружено магнитное поле (Arduino).';
-                var html = '<div class="danger-warning danger-high">' +
-                    '<span class="danger-warning-icon">🚨</span>' +
-                    '<div class="danger-warning-body">' +
-                    '<span class="danger-warning-text">' + text + '</span>' +
-                    (reason ? '<div class="danger-warning-reason">Причина: ' + reason + '</div>' : '') +
-                    '</div>' +
-                    '<span class="danger-warning-time">T+' + tSec.toFixed(1) + 's</span>' +
-                    '</div>';
-                dangerContent.innerHTML = html;
-                dangerPanel.style.display = 'block';
+        _arduinoPrevVibration = _arduinoLive ? _arduinoLive.vibration : null;
+        var magRising = !prevMag && nowMag;
+        var vibRising = !prevVib && nowVib;
+        if (magRising || vibRising) {
+            if (lastMissionData) {
+                if (dangerPanelShowTimeoutId) {
+                    clearTimeout(dangerPanelShowTimeoutId);
+                    dangerPanelShowTimeoutId = null;
+                }
+                updateDangerWarnings(lastMissionData);
+            } else {
+                var dangerPanel = document.getElementById('danger-panel');
+                var dangerContent = document.getElementById('danger-content');
+                if (dangerPanel && dangerContent) {
+                    var tSec = Date.now() / 1000;
+                    var text;
+                    var reasonLine;
+                    if (magRising && vibRising) {
+                        text = 'АНОМАЛИЯ! Магнитное поле и вибрация (Arduino).';
+                        reasonLine = getAnomalyReasonLabel('MAGNETIC_FIELD') + ' · ' + getAnomalyReasonLabel('VIBRATION_SPIKE');
+                    } else if (magRising) {
+                        text = 'АНОМАЛИЯ! Обнаружено магнитное поле (Arduino).';
+                        reasonLine = getAnomalyReasonLabel('MAGNETIC_FIELD');
+                    } else {
+                        text = 'АНОМАЛИЯ! Обнаружена вибрация корпуса (Arduino).';
+                        reasonLine = getAnomalyReasonLabel('VIBRATION_SPIKE');
+                    }
+                    var html = '<div class="danger-warning danger-high">' +
+                        '<span class="danger-warning-icon">🚨</span>' +
+                        '<div class="danger-warning-body">' +
+                        '<span class="danger-warning-text">' + text + '</span>' +
+                        (reasonLine ? '<div class="danger-warning-reason">Причина: ' + reasonLine + '</div>' : '') +
+                        '</div>' +
+                        '<span class="danger-warning-time">T+' + tSec.toFixed(1) + 's</span>' +
+                        '</div>';
+                    dangerContent.innerHTML = html;
+                    dangerPanel.style.display = 'block';
+                }
             }
         }
     } catch (e) {

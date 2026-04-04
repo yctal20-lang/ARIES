@@ -1,7 +1,8 @@
-# A.R.I.E.S — Advanced Retrieval & In-Orbit Elimination System
+# A.R.I.E.S — Autonomous Research & Intelligence Earth Satellite
 
 <p align="center">
   <strong>Autonomous AI system for orbital debris collection</strong><br>
+  Web UI subtitle: <em>Autonomous Research & Intelligence Earth Satellite</em><br>
   Deep learning · Reinforcement learning · Sensor fusion · Orbital mechanics
 </p>
 
@@ -13,9 +14,12 @@
 
 ## About
 
-A.R.I.E.S is an autonomous spacecraft control system designed for active space debris removal.
-The system combines reinforcement learning agents, neural network modules, physics-informed simulation,
-and a real-time web dashboard — built from the ground up in Python.
+**A.R.I.E.S** is an autonomous spacecraft control system for active space debris removal.
+The **cover screen** and HTTP API (`full_name`) use the expansion **Autonomous Research & Intelligence Earth Satellite**.
+The older wording *Advanced Retrieval & In-Orbit Elimination System* still appears in some docs and code paths.
+
+The stack combines reinforcement learning agents, neural network modules, physics-informed simulation,
+and an AetherOS-style real-time web dashboard — mostly in Python.
 
 **Live demo:** [https://a-r-i-e-s-1.onrender.com](https://a-r-i-e-s-1.onrender.com/) — deployed on Render via Flask + Gunicorn.
 
@@ -34,7 +38,7 @@ and a real-time web dashboard — built from the ground up in Python.
 | **RL agents** | SAC (collision avoidance, manipulator), PPO (energy management) |
 | **Neural modules** | CNN collision detector, LSTM autoencoder (anomaly), TCN (state prediction), TFT (failure prediction), EfficientNet (debris recognition), DETR tracker |
 | **Fail-safe system** | Classical algorithm fallbacks, watchdog timers, automatic mode degradation |
-| **Web dashboard** | AetherOS-style dark UI: 3D orbit view, telemetry, debris tracking, danger alerts |
+| **Web dashboard** | AetherOS dark UI: cover (Seed / Add / Start), 3D orbit, radar, telemetry charts, Arduino log panel, alerts (including live-sensor anomalies) |
 | **Gymnasium environment** | Full RL-compatible orbital environment for training |
 
 ---
@@ -97,8 +101,13 @@ space_debris_ai/
 ├── visualization/                     # Dashboards
 │   ├── dashboard.py                   # Matplotlib mission dashboard
 │   ├── web_server.py                  # Flask web dashboard (production)
-│   ├── templates/index.html           # AetherOS-style dark UI
-│   └── static/                        # CSS + JS (Plotly.js 3D charts)
+│   ├── templates/index.html           # Cover + mission layout (AetherOS)
+│   └── static/                        # CSS + JS (Plotly.js 3D + charts)
+│
+├── arduino_bridge/                    # Optional: Arduino over Serial
+│   ├── serial_reader.py               # Line parser, snapshot for API, disk logs
+│   ├── routes.py                      # /api/arduino/live, stream, start, logs
+│   └── arduino_port.example.txt       # Sample COM port (see arduino_port.txt)
 │
 └── tests/                             # Test suite
     ├── test_basic.py
@@ -128,7 +137,9 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5000` — 3D orbit view, telemetry, debris tracking, danger alerts.
+Open `http://127.0.0.1:5000`: on the **cover**, set a seed (**Seed** / field + **Add**) or press **Start** (default seed). After `/api/mission-data` loads, the mission dashboard opens (3D orbit, charts, radar, Arduino).
+
+For **Arduino**, install `pyserial` and set the port (`ARDUINO_PORT`, `--arduino-port`, or `arduino_bridge/arduino_port.txt`). See `space_debris_ai/visualization/WEB_DASHBOARD.md`.
 
 ### Full System (requires PyTorch)
 
@@ -211,16 +222,34 @@ for _ in range(1000):
 
 ## Web Dashboard
 
-AetherOS-style dark theme interface with real-time mission data:
+**AetherOS**-style dark theme (`aetheros.css`, `dashboard.js`) with mission data from the server (`/api/mission-data`, optional periodic refresh).
 
-- **Orbit Track** — 3D Earth + spacecraft trajectory + debris field (Plotly.js)
-- **Telemetry** — position/velocity components over time
-- **Fusion** — sensor confidence and spacecraft speed
-- **Resources** — fuel level and debris count
-- **Danger Alerts** — collision warnings, anomalies, low fuel events
-- **Debris Table** — each object with size, mass, material, distance, disposal recommendation
+### Cover (before mission)
 
-Disposal suggestions follow ESA/NASA approaches: laser ablation, net capture, harpoon/robotic arm, rendezvous & deorbit.
+- Title **A.R.I.E.S** and subtitle **Autonomous Research & Intelligence Earth Satellite**
+- **Seed** — generate a seed; **Copy** — clipboard
+- **Enter seed** + **Add** — load simulation with that integer seed
+- **Start** — run with the default seed (no input)
+
+### Mission layout
+
+- **Top bar** — clock, mission badge, comm indicators, battery
+- **Left** — **Velocity** (gauge + readouts), **Environment** (grid)
+- **Center** — **Trajectory**: 3D scene (Plotly.js) with Earth, path, debris; obstacle count; **debris popup** (size, material, type, trajectory; **ARDUINO LIVE** block — distance, magnetic field, temperature, time-to-collision when data is available)
+- **Radar** — PPI-style canvas, threat count
+- **Danger Status** — danger gauge, collision / anomaly / fuel counters
+- **Right** — **System Health**, **AI Copilot** cards
+- **Bottom chart row** — **Telemetry — ECI** (position), **Fusion & Velocity**, **Resources** (fuel, debris count, danger level)
+- **Arduino Sensor Log** — log files and table (distance, magnetic field, temperature, humidity, vibration)
+- **Footer** — brand, system status, seed, warnings
+
+### Alerts
+
+- **Red danger panel** — collisions, simulation anomalies, low fuel; per-item **Resolve** and **Resolve all** for anomalies
+- With Arduino connected, **magnetic** and **vibration** readings raise merged warnings; **vibration** is surfaced immediately when it appears on live data (no long delay)
+- Green **no anomaly** banner (dismissible)
+
+Disposal suggestions (ESA/NASA-style) are provided via API / debris-analysis flows: laser ablation, net capture, harpoon/arm, rendezvous & deorbit.
 
 ---
 
