@@ -5,10 +5,10 @@ A.R.I.E.S Web Dashboard Launcher.
 Использование:
     python run_web_dashboard.py
 
-После запуска откройте в браузере: http://127.0.0.1:5000/
-С этого ПК: http://127.0.0.1:5000/  или  http://localhost:5000/
-С других устройств в той же сети: http://<IP этого ПК>:5000/
-Если порт 5000 занят, попробуйте: python run_web_dashboard.py --port 5001
+После запуска откройте в браузере: http://127.0.0.1:5001/
+С этого ПК: http://127.0.0.1:5001/  или  http://localhost:5001/
+С других устройств в той же сети: http://<IP этого ПК>:5001/
+Если порт 5001 занят, попробуйте: python run_web_dashboard.py --port 5000
 """
 
 import argparse
@@ -43,7 +43,7 @@ def _dlog(msg, data=None, hypothesis_id=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A.R.I.E.S Web Dashboard")
     parser.add_argument("--host", default="0.0.0.0", help="Host (default: 0.0.0.0 — доступ с других устройств)")
-    parser.add_argument("--port", type=int, default=5000, help="Port (default: 5000)")
+    parser.add_argument("--port", type=int, default=5001, help="Port (default: 5001)")
     parser.add_argument(
         "--arduino-port",
         default=None,

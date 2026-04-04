@@ -1,6 +1,7 @@
 services:
   - type: web
     name: aries-dashboard
+    branch: main
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn space_debris_ai.visualization.web_server:app --bind 0.0.0.0:$PORT

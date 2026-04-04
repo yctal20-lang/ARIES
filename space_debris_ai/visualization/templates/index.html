@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.R.I.E.S — Mission Control</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/aetheros.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/aetheros.css', v=static_v) }}">
 </head>
 <body>
     <div class="cosmic-bg"></div>
@@ -215,22 +215,6 @@
         </aside>
     </main>
 
-    <!-- Secondary row: Telemetry, Fusion, Resources (compact) -->
-    <section class="dashboard-secondary">
-        <div class="glass-panel">
-            <div class="panel-label">Telemetry — ECI</div>
-            <div id="position-chart" class="chart chart-small"></div>
-        </div>
-        <div class="glass-panel">
-            <div class="panel-label">Fusion & Velocity</div>
-            <div id="velocity-chart" class="chart chart-small"></div>
-        </div>
-        <div class="glass-panel">
-            <div class="panel-label">Resources</div>
-            <div id="resources-chart" class="chart chart-small"></div>
-        </div>
-    </section>
-
     <!-- Arduino Sensor Log panel -->
     <section class="dashboard-secondary sensor-log-section">
         <div class="glass-panel sensor-log-panel">
@@ -291,7 +275,7 @@
     </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js', v=static_v) }}"></script>
 </body>
 </html>
 

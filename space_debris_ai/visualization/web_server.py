@@ -33,6 +33,26 @@ app = Flask(
     static_folder=str(Path(__file__).parent / "static"),
 )
 
+
+def _static_cache_version() -> str:
+    """Bust browser/CDN caches after deploy (Render sets RENDER_GIT_COMMIT)."""
+    import os
+
+    commit = (os.environ.get("RENDER_GIT_COMMIT") or os.environ.get("GIT_COMMIT") or "").strip()
+    if commit:
+        return commit[:12]
+    try:
+        dash = Path(__file__).parent / "static" / "js" / "dashboard.js"
+        return str(int(dash.stat().st_mtime))
+    except OSError:
+        return "dev"
+
+
+@app.context_processor
+def _inject_static_cache_version():
+    return {"static_v": _static_cache_version()}
+
+
 try:
     from space_debris_ai.arduino_bridge.routes import arduino_bp
 
@@ -394,7 +414,7 @@ def disposal_method():
     return jsonify(result)
 
 
-def run_server(host="0.0.0.0", port=5000, debug=True):
+def run_server(host="0.0.0.0", port=5001, debug=True):
     """Run the Flask server. host=0.0.0.0 — слушать на всех интерфейсах (доступ с других устройств)."""
     # #region agent log
     _dlog("run_server_entered", {"host": host, "port": port}, "H1")
@@ -404,7 +424,7 @@ def run_server(host="0.0.0.0", port=5000, debug=True):
     print("Web Dashboard Server")
     print("=" * 70)
     print(f"\nServer starting at: http://{host}:{port}")
-    print("  На этом ПК:        http://127.0.0.1:{port}")
+    print(f"  На этом ПК:        http://127.0.0.1:{port}")
     if host == "0.0.0.0":
         try:
             import socket
@@ -417,7 +437,7 @@ def run_server(host="0.0.0.0", port=5000, debug=True):
             print(f"  С других устройств: http://<IP этого ПК>:{port}")
     print("\nOpen your browser and navigate to the URL above.")
     if host == "0.0.0.0":
-        print("  If another device can't connect - allow Python in Windows Firewall (Port TCP 5000).")
+        print(f"  If another device can't connect - allow Python in Windows Firewall (Port TCP {port}).")
     print("Press Ctrl+C to stop the server.")
     print("  Arduino: GET /api/arduino/live  |  SSE /api/arduino/stream  (ARDUINO_PORT=COMx, pip install pyserial)\n")
     

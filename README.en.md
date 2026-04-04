@@ -1,14 +1,12 @@
 # A.R.I.E.S — Autonomous Research & Intelligence Earth Satellite
 
-<p align="center">
-  <strong>Autonomous AI system for orbital debris collection</strong><br>
-  Web UI subtitle: <em>Autonomous Research & Intelligence Earth Satellite</em><br>
-  Deep learning · Reinforcement learning · Sensor fusion · Orbital mechanics
-</p>
+Autonomous AI system for orbital debris collection
 
-<p align="center">
-  <strong>English</strong> · <a href="README.ru.md">Русский</a>
-</p>
+Web UI subtitle: *Autonomous Research & Intelligence Earth Satellite*
+
+Deep learning · Reinforcement learning · Sensor fusion · Orbital mechanics
+
+English (this document) · [Русский](README.ru.md)
 
 ---
 
@@ -21,31 +19,28 @@ The older wording *Advanced Retrieval & In-Orbit Elimination System* still appea
 The stack combines reinforcement learning agents, neural network modules, physics-informed simulation,
 and an AetherOS-style real-time web dashboard — mostly in Python.
 
-**Live demo:** [https://a-r-i-e-s-1.onrender.com](https://a-r-i-e-s-1.onrender.com/) — deployed on Render via Flask + Gunicorn.
-
-> [!IMPORTANT]
-> **The site may take 3–5 minutes to start up.** The free Render instance goes to sleep after ~15 minutes of inactivity. When you open the link for the first time (or after a period of inactivity), please wait 3–5 minutes for the server to fully wake up and load all dependencies. This is normal behavior for free-tier hosting.
+**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5001](http://127.0.0.1:5001/) in your browser. For live Arduino sensors, use USB serial and `pyserial` (see [Quick Start](#quick-start)).
 
 ---
 
 ## Key Features
 
 | Feature | Description |
-|---|---|
+| --- | --- |
 | **4-level priority architecture** | Survival → Safety → Mission Critical → Mission Execution |
 | **Physics-informed simulation** | Keplerian orbital mechanics with J2 perturbation, solar pressure, atmospheric drag |
 | **Multi-sensor fusion** | GPS, IMU, Star Tracker with weighted fusion |
 | **RL agents** | SAC (collision avoidance, manipulator), PPO (energy management) |
 | **Neural modules** | CNN collision detector, LSTM autoencoder (anomaly), TCN (state prediction), TFT (failure prediction), EfficientNet (debris recognition), DETR tracker |
 | **Fail-safe system** | Classical algorithm fallbacks, watchdog timers, automatic mode degradation |
-| **Web dashboard** | AetherOS dark UI: cover (Seed / Add / Start), 3D orbit, radar, telemetry charts, Arduino log panel, alerts (including live-sensor anomalies) |
+| **Web dashboard** | AetherOS dark UI: cover (Seed / Add / Start), 3D orbit, radar, live readouts, Arduino log panel, alerts (including live-sensor anomalies) |
 | **Gymnasium environment** | Full RL-compatible orbital environment for training |
 
 ---
 
 ## Architecture
 
-```
+```text
 space_debris_ai/
 ├── core/                              # Base infrastructure
 │   ├── config.py                      # Pydantic configuration & validation
@@ -120,7 +115,7 @@ space_debris_ai/
 ## Priority Levels
 
 | Level | Name | Latency | Reliability | Purpose |
-|:---:|---|---|---|---|
+| :---: | --- | --- | --- | --- |
 | 1 | Survival | < 100 ms | 99.999% | Collision avoidance, navigation |
 | 2 | Safety | < 500 ms | 99.99% | Anomaly detection, power management |
 | 3 | Mission Critical | < 1 s | 99.9% | State prediction, early warning, failure prediction |
@@ -137,7 +132,7 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5000`: on the **cover**, set a seed (**Seed** / field + **Add**) or press **Start** (default seed). After `/api/mission-data` loads, the mission dashboard opens (3D orbit, charts, radar, Arduino).
+Open `http://127.0.0.1:5001`: on the **cover**, set a seed (**Seed** / field + **Add**) or press **Start** (default seed). After `/api/mission-data` loads, the mission dashboard opens (3D orbit, radar, readouts, Arduino).
 
 For **Arduino**, install `pyserial` and set the port (`ARDUINO_PORT`, `--arduino-port`, or `arduino_bridge/arduino_port.txt`). See `space_debris_ai/visualization/WEB_DASHBOARD.md`.
 
@@ -239,7 +234,6 @@ for _ in range(1000):
 - **Radar** — PPI-style canvas, threat count
 - **Danger Status** — danger gauge, collision / anomaly / fuel counters
 - **Right** — **System Health**, **AI Copilot** cards
-- **Bottom chart row** — **Telemetry — ECI** (position), **Fusion & Velocity**, **Resources** (fuel, debris count, danger level)
 - **Arduino Sensor Log** — log files and table (distance, magnetic field, temperature, humidity, vibration)
 - **Footer** — brand, system status, seed, warnings
 
@@ -250,18 +244,6 @@ for _ in range(1000):
 - Green **no anomaly** banner (dismissible)
 
 Disposal suggestions (ESA/NASA-style) are provided via API / debris-analysis flows: laser ablation, net capture, harpoon/arm, rendezvous & deorbit.
-
----
-
-## Deployment (Render)
-
-The project includes `render.yaml` for deployment:
-
-| Setting | Value |
-|---|---|
-| **Runtime** | Python 3.11 |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn space_debris_ai.visualization.web_server:app --bind 0.0.0.0:$PORT` |
 
 ---
 
@@ -276,7 +258,7 @@ pytest space_debris_ai/tests/ -v
 ## Target Metrics
 
 | Metric | Target |
-|---|---|
+| --- | --- |
 | Collision avoidance | 100% |
 | Debris collection accuracy | > 95% |
 | Fuel efficiency vs classical | +30% |
@@ -297,7 +279,7 @@ pytest space_debris_ai/tests/ -v
 
 **Web:** Flask · Gunicorn · Plotly.js · AetherOS CSS
 
-**Infra:** Render · ONNX Runtime · TensorBoard · W&B
+**Infra:** ONNX Runtime · TensorBoard · W&B
 
 ---
 

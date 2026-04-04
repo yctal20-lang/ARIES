@@ -19,10 +19,7 @@ The older wording *Advanced Retrieval & In-Orbit Elimination System* still appea
 The stack combines reinforcement learning agents, neural network modules, physics-informed simulation,
 and an AetherOS-style real-time web dashboard — mostly in Python.
 
-**Live demo:** [https://a-r-i-e-s-1.onrender.com](https://a-r-i-e-s-1.onrender.com/) — deployed on Render via Flask + Gunicorn.
-
-> [!IMPORTANT]
-> **The site may take 3–5 minutes to start up.** The free Render instance goes to sleep after ~15 minutes of inactivity. When you open the link for the first time (or after a period of inactivity), please wait 3–5 minutes for the server to fully wake up and load all dependencies. This is normal behavior for free-tier hosting.
+**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5001](http://127.0.0.1:5001/) in your browser. For live Arduino sensors, use a USB serial port and `pyserial` (see [Local Setup](#local-setup)).
 
 ## Key Features
 
@@ -34,7 +31,7 @@ and an AetherOS-style real-time web dashboard — mostly in Python.
 | **RL agents** | SAC (collision avoidance, manipulator), PPO (energy management) |
 | **Neural modules** | CNN collision detector, LSTM autoencoder (anomaly), TCN (state prediction), TFT (failure prediction), EfficientNet (debris recognition), DETR tracker |
 | **Fail-safe system** | Classical algorithm fallbacks, watchdog timers, automatic mode degradation |
-| **Web dashboard** | AetherOS dark UI: cover (Seed / Add / Start), 3D orbit, radar, telemetry charts, Arduino log panel, alerts (including live-sensor anomalies) |
+| **Web dashboard** | AetherOS dark UI: cover (Seed / Add / Start), 3D orbit, radar, live readouts, Arduino log panel, alerts (including live-sensor anomalies) |
 | **Gymnasium environment** | Full RL-compatible orbital environment for training |
 
 ---
@@ -203,7 +200,7 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5001`: **Seed** / **Add** or **Start**, then 3D orbit, charts, radar, and optional Arduino live data (see above).
+Open `http://127.0.0.1:5001`: **Seed** / **Add** or **Start**, then 3D orbit, radar, readouts, and optional Arduino live data (see above).
 
 ### Full System (requires PyTorch)
 
@@ -299,7 +296,6 @@ for _ in range(1000):
 - **Radar** — PPI-style canvas, threat count
 - **Danger Status** — danger gauge, collision / anomaly / fuel counters
 - **Right** — **System Health**, **AI Copilot** cards
-- **Bottom chart row** — **Telemetry — ECI** (position), **Fusion & Velocity**, **Resources** (fuel, debris count, danger level)
 - **Arduino Sensor Log** — log files and table (distance, magnetic field, temperature, humidity, vibration)
 - **Footer** — brand, system status, seed, warnings
 
@@ -310,18 +306,6 @@ for _ in range(1000):
 - Green **no anomaly** banner (dismissible)
 
 Disposal suggestions (ESA/NASA-style) are provided via API / debris-analysis flows: laser ablation, net capture, harpoon/arm, rendezvous & deorbit.
-
----
-
-## Deployment (Render)
-
-The project includes `render.yaml` for one-click deployment:
-
-| Setting | Value |
-| --- | --- |
-| **Runtime** | Python 3.11 |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn space_debris_ai.visualization.web_server:app --bind 0.0.0.0:$PORT` |
 
 ---
 
@@ -357,7 +341,7 @@ pytest space_debris_ai/tests/ -v
 
 **Web:** Flask · Gunicorn · Plotly.js · AetherOS CSS
 
-**Infra:** Render · ONNX Runtime · TensorBoard · W&B
+**Infra:** ONNX Runtime · TensorBoard · W&B
 
 ---
 

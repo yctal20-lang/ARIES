@@ -916,10 +916,10 @@ body {
     50% { opacity: 1; }
 }
 
-/* Secondary row (telemetry, fusion, resources) */
+/* Secondary row (e.g. Arduino sensor log) */
 .dashboard-secondary {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
     max-width: 1600px;
     margin: 0 auto;
