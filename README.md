@@ -19,7 +19,7 @@ The older wording *Advanced Retrieval & In-Orbit Elimination System* still appea
 The stack combines reinforcement learning agents, neural network modules, physics-informed simulation,
 and an AetherOS-style real-time web dashboard — mostly in Python.
 
-**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5001](http://127.0.0.1:5001/) in your browser. For live Arduino sensors, use a USB serial port and `pyserial` (see [Local Setup](#local-setup)).
+**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5000](http://127.0.0.1:5000/) in your browser. For live Arduino sensors, use a USB serial port and `pyserial` (see [Local Setup](#local-setup)).
 
 ## Key Features
 
@@ -164,7 +164,7 @@ pip install -r space_debris_ai/requirements.txt
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5001` in your browser. On the **cover**, use **Seed** / **Add** (custom seed) or **Start** (default seed); after `/api/mission-data` loads, the mission dashboard appears.
+Open `http://127.0.0.1:5000` in your browser. On the **cover**, use **Seed** / **Add** (custom seed) or **Start** (default seed); after `/api/mission-data` loads, the mission dashboard appears.
 
 For **Arduino**, install `pyserial` and set the port (`ARDUINO_PORT`, `--arduino-port`, or `space_debris_ai/arduino_bridge/arduino_port.txt`). See `space_debris_ai/visualization/WEB_DASHBOARD.md`.
 
@@ -200,7 +200,7 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5001`: **Seed** / **Add** or **Start**, then 3D orbit, radar, readouts, and optional Arduino live data (see above).
+Open `http://127.0.0.1:5000`: **Seed** / **Add** or **Start**, then 3D orbit, radar, readouts, and optional Arduino live data (see above).
 
 ### Full System (requires PyTorch)
 

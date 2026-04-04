@@ -19,7 +19,7 @@ The older wording *Advanced Retrieval & In-Orbit Elimination System* still appea
 The stack combines reinforcement learning agents, neural network modules, physics-informed simulation,
 and an AetherOS-style real-time web dashboard — mostly in Python.
 
-**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5001](http://127.0.0.1:5001/) in your browser. For live Arduino sensors, use USB serial and `pyserial` (see [Quick Start](#quick-start)).
+**Web dashboard:** run `python run_web_dashboard.py`, then open [http://127.0.0.1:5000](http://127.0.0.1:5000/) in your browser. For live Arduino sensors, use USB serial and `pyserial` (see [Quick Start](#quick-start)).
 
 ---
 
@@ -132,7 +132,7 @@ pip install flask numpy gymnasium gunicorn
 python run_web_dashboard.py
 ```
 
-Open `http://127.0.0.1:5001`: on the **cover**, set a seed (**Seed** / field + **Add**) or press **Start** (default seed). After `/api/mission-data` loads, the mission dashboard opens (3D orbit, radar, readouts, Arduino).
+Open `http://127.0.0.1:5000`: on the **cover**, set a seed (**Seed** / field + **Add**) or press **Start** (default seed). After `/api/mission-data` loads, the mission dashboard opens (3D orbit, radar, readouts, Arduino).
 
 For **Arduino**, install `pyserial` and set the port (`ARDUINO_PORT`, `--arduino-port`, or `arduino_bridge/arduino_port.txt`). See `space_debris_ai/visualization/WEB_DASHBOARD.md`.
 
