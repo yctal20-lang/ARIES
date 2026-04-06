@@ -21,16 +21,16 @@
                 <button type="button" id="cover-seed-btn" class="cover-seed-btn">Seed</button>
             </div>
             <div id="cover-seed-block" class="cover-seed-block" style="display: none;">
-                <span class="cover-seed-label">Сид (можно копировать):</span>
+                <span class="cover-seed-label">Seed (copy):</span>
                 <div class="cover-seed-row">
                     <output id="generated-seed-value" class="cover-seed-value" aria-label="Generated seed"></output>
-                    <button type="button" id="cover-seed-copy" class="cover-seed-copy" title="Копировать">Copy</button>
+                    <button type="button" id="cover-seed-copy" class="cover-seed-copy" title="Copy">Copy</button>
                 </div>
             </div>
             <div class="cover-seed-add-row">
-                <label for="seed-input" class="cover-seed-label">Введите сид:</label>
+                <label for="seed-input" class="cover-seed-label">Enter seed:</label>
                 <div class="cover-seed-input-row">
-                    <input type="text" id="seed-input" class="cover-seed-input" placeholder="Сид (любое целое)" inputmode="numeric" autocomplete="off" />
+                    <input type="text" id="seed-input" class="cover-seed-input" placeholder="Seed (any integer)" inputmode="numeric" autocomplete="off" />
                     <button type="button" id="cover-add-btn" class="cover-add-btn">Add</button>
                 </div>
             </div>
@@ -102,28 +102,26 @@
                         <div class="loading">Loading trajectory...</div>
                     </div>
                     <div class="orbit-obstacles-panel">
-                        <span class="orbit-obstacles-label">Преград</span>
+                        <span class="orbit-obstacles-label">Obstacles</span>
                         <span id="orbit-obstacles-count">0</span>
                     </div>
                 </div>
                 <div id="orbit-debris-popup" class="orbit-debris-popup" style="display: none;">
-                    <button type="button" id="orbit-popup-close" class="orbit-popup-close" title="Закрыть" aria-label="Закрыть">×</button>
-                    <strong class="orbit-popup-title">Мусор</strong>
+                    <button type="button" id="orbit-popup-close" class="orbit-popup-close" title="Close" aria-label="Close">×</button>
+                    <strong class="orbit-popup-title">Debris</strong>
                     <div class="orbit-popup-cols">
                         <div class="orbit-popup-col orbit-popup-col-left">
-                            Размер: <span id="orbit-popup-size">—</span> m<br>
-                            Материал: <span id="orbit-popup-material">—</span><br>
-                            Тип: <span id="orbit-popup-type">—</span><br>
-                            Траектория: <span id="orbit-popup-trajectory">—</span>
+                            Size: <span id="orbit-popup-size">—</span> m<br>
+                            Material: <span id="orbit-popup-material">—</span><br>
+                            Type: <span id="orbit-popup-type">—</span><br>
+                            Trajectory: <span id="orbit-popup-trajectory">—</span>
                         </div>
                         <div class="orbit-popup-col orbit-popup-col-right">
                             <div class="ard-sensor-block">
                                 <span class="ard-sensor-label">ARDUINO LIVE</span>
                                 <span class="ard-sensor-dot" id="ard-live-dot"></span>
                             </div>
-                            Расстояние: <span id="orbit-popup-distance">—</span><br>
-                            Магнитное поле: <span id="orbit-popup-magnetic">—</span><br>
-                            Температура: <span id="orbit-popup-temp">—</span><br>
+                            Distance: <span id="orbit-popup-distance">—</span>
                         </div>
                     </div>
                 </div>
@@ -139,6 +137,10 @@
                     <canvas id="radar-canvas"></canvas>
                 </div>
             </div>
+        </section>
+
+        <!-- Right column -->
+        <aside class="col col-right">
             <div class="glass-panel danger-status-panel">
                 <div class="panel-label">Danger Status</div>
                 <div id="danger-gauge" class="danger-gauge">
@@ -146,31 +148,40 @@
                 </div>
                 <div class="danger-stats">
                     <div class="danger-stat danger-stat-danger">
-                        <span>Уровень опасности:</span>
-                        <span id="danger-level-value" class="danger-stat-value">0%</span>
+                        <span>Danger level:</span>
+                        <span id="danger-level-value" class="danger-stat-value">low</span>
                     </div>
                     <div class="danger-stat">
-                        <span>Столкновений:</span>
-                        <span id="collision-count" class="danger-stat-value">0</span>
-                    </div>
-                    <div class="danger-stat danger-stat-anomaly">
-                        <span>Аномалий:</span>
-                        <span id="anomaly-count" class="danger-stat-value">0</span>
+                        <span>Magnetic field:</span>
+                        <span id="danger-magnetic" class="danger-stat-value">Clear</span>
                     </div>
                     <div class="danger-stat">
-                        <span>Низкое топливо (предупр.):</span>
-                        <span id="low-fuel-count" class="danger-stat-value">0</span>
+                        <span>Temperature:</span>
+                        <span id="danger-temperature" class="danger-stat-value">OK</span>
                     </div>
-                    <div class="danger-stat danger-stat-fuel">
-                        <span>Топливо (кг):</span>
-                        <span id="fuel-mass-value" class="danger-stat-value">—</span>
+                    <div class="danger-stat">
+                        <span>Vibration:</span>
+                        <span id="danger-vibration" class="danger-stat-value">None</span>
+                    </div>
+                    <div class="danger-stat">
+                        <span>Proximity:</span>
+                        <span id="danger-proximity" class="danger-stat-value">Safe</span>
                     </div>
                 </div>
             </div>
-        </section>
-
-        <!-- Right column -->
-        <aside class="col col-right">
+            <div class="glass-panel ship-status-panel" id="ship-status-panel">
+                <div class="panel-label">Satellite Status <span class="ard-sensor-dot" id="ship-status-dot"></span></div>
+                <div class="ship-status-grid">
+                    <div class="ship-status-item">
+                        <span class="ship-status-label">Magnetic field</span>
+                        <span class="ship-status-value" id="ship-status-magnetic">—</span>
+                    </div>
+                    <div class="ship-status-item">
+                        <span class="ship-status-label">Temperature</span>
+                        <span class="ship-status-value" id="ship-status-temp">—</span>
+                    </div>
+                </div>
+            </div>
             <div class="glass-panel health-panel">
                 <div class="panel-label">System Health</div>
                 <div class="health-total">96<span>%</span></div>
@@ -219,8 +230,8 @@
         <div class="glass-panel sensor-log-panel">
             <div class="panel-label">
                 Arduino Sensor Log
-                <span class="sensor-log-dir" id="sensor-log-dir" title="Папка на диске"></span>
-                <button type="button" id="sensor-log-refresh" class="sensor-log-refresh-btn" title="Обновить">↻</button>
+                <span class="sensor-log-dir" id="sensor-log-dir" title="Logs directory"></span>
+                <button type="button" id="sensor-log-refresh" class="sensor-log-refresh-btn" title="Refresh">↻</button>
                 <select id="sensor-log-file-select" class="sensor-log-select"></select>
             </div>
             <div id="sensor-log-latest" class="sensor-log-latest"></div>
@@ -228,37 +239,19 @@
                 <table class="sensor-log-table">
                     <thead>
                         <tr>
-                            <th>Время</th>
-                            <th>Расстояние</th>
-                            <th>Магнитное поле</th>
-                            <th>Температура</th>
-                            <th>Вибрация</th>
+                            <th>Time</th>
+                            <th>Distance</th>
+                            <th>Magnetic field</th>
+                            <th>Temperature</th>
+                            <th>Vibration</th>
                         </tr>
                     </thead>
                     <tbody id="sensor-log-tbody"></tbody>
                 </table>
-                <div id="sensor-log-empty" class="sensor-log-empty" style="display:none;">Нет данных. Подключите Arduino и запустите считывание.</div>
+                <div id="sensor-log-empty" class="sensor-log-empty" style="display:none;">No data. Connect Arduino and start reading.</div>
             </div>
         </div>
     </section>
-
-    <!-- Danger warnings panel -->
-    <div id="danger-panel" class="danger-panel" style="display: none;">
-        <div class="danger-header">
-            <span class="danger-icon">⚠️</span>
-            <span id="danger-title">ОПАСНОСТЬ ОБНАРУЖЕНА</span>
-            <button class="danger-close" onclick="document.getElementById('danger-panel').style.display='none'">×</button>
-        </div>
-        <div id="danger-content" class="danger-content"></div>
-    </div>
-    <!-- No-anomaly panel (green), скрывается по кнопке Утилизация -->
-    <div id="no-anomaly-panel" class="no-anomaly-panel" style="display: none;">
-        <div class="no-anomaly-header">
-            <span class="no-anomaly-icon">✓</span>
-            <span id="no-anomaly-title">АНОМАЛИЙ НЕ ОБНАРУЖЕНО</span>
-            <button type="button" class="no-anomaly-close" id="no-anomaly-close" aria-label="Закрыть">×</button>
-        </div>
-    </div>
 
     <footer class="footer-status" id="footer-status">
         <span class="live-dot" id="status-dot"></span>
@@ -271,6 +264,23 @@
         <span id="warnings-count" style="display: none;">·</span>
         <span id="warnings-text" style="display: none;">WARNINGS: <span id="warnings-num">0</span></span>
     </footer>
+    </div>
+
+    <!-- Вне #dashboard: .dashboard-hidden { display:none } скрывал бы панель -->
+    <div id="danger-panel" class="danger-panel" style="display: none;">
+        <div class="danger-header">
+            <span class="danger-icon">⚠️</span>
+            <span id="danger-title">DANGER DETECTED</span>
+            <button class="danger-close" onclick="document.getElementById('danger-panel').style.display='none'">×</button>
+        </div>
+        <div id="danger-content" class="danger-content"></div>
+    </div>
+    <div id="no-anomaly-panel" class="no-anomaly-panel" style="display: none;">
+        <div class="no-anomaly-header">
+            <span class="no-anomaly-icon">✓</span>
+            <span id="no-anomaly-title">NO ANOMALIES DETECTED</span>
+            <button type="button" class="no-anomaly-close" id="no-anomaly-close" aria-label="Close">×</button>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js', v=static_v) }}"></script>

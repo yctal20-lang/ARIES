@@ -71,6 +71,8 @@ var dismissedAnomalyKeys = {}; // ключи устранённых аномал
 var noAnomalyPanelDismissed = false; // закрыла зелёное окно — больше не показывать
 var dangerPanelShowTimeoutId = null;  // задержка перед показом красного окна (не так быстро)
 var DANGER_PANEL_DELAY_MS = 6000;    // 6 сек до показа панели опасности
+/** Периодический resync панели опасности при удерживаемом магните/вибрации (мс) */
+var _lastArduinoDangerResyncMs = 0;
 /** Расстояние до выбранного мусора из симуляции (км), пока попап открыт */
 var _orbitPopupSimDistanceKm = null;
 var _popupArduinoIntervalId = null;
@@ -191,21 +193,23 @@ function startOrbitShipAnimation() {
 }
 
 function getDebrisTypeLabel(type) {
-    var map = { fragment: 'Обломок', rocket_body: 'Корпус ракеты', satellite: 'Фрагмент спутника', tool: 'Инструмент', panel: 'Панель (солнечная/MLI)' };
-    return (map[type] != null ? map[type] : type) || 'Неизвестно';
+    var map = { fragment: 'Fragment', rocket_body: 'Rocket body', satellite: 'Satellite fragment', tool: 'Tool', panel: 'Panel (solar/MLI)' };
+    return (map[type] != null ? map[type] : type) || 'Unknown';
 }
 function getAnomalyReasonLabel(type) {
     var map = {
-        TELEMETRY_ANOMALY: 'Телеметрическая аномалия',
-        SENSOR_DEVIATION: 'Отклонение в датчиках',
-        COMM_LOSS: 'Сбой связи',
-        ORIENTATION_ANOMALY: 'Аномалия ориентации',
-        GYRO_DRIFT: 'Дрейф гироскопа',
-        POWER_FLUCTUATION: 'Колебания питания',
-        MAGNETIC_FIELD: 'Аномалия магнитного поля (Arduino)',
-        VIBRATION_SPIKE: 'Вибрация корпуса (Arduino)',
+        TELEMETRY_ANOMALY: 'Telemetry anomaly',
+        SENSOR_DEVIATION: 'Sensor deviation',
+        COMM_LOSS: 'Communication loss',
+        ORIENTATION_ANOMALY: 'Orientation anomaly',
+        GYRO_DRIFT: 'Gyro drift',
+        POWER_FLUCTUATION: 'Power fluctuation',
+        MAGNETIC_FIELD: 'Magnetic field detected (Hall / magnetic sensor, Arduino)',
+        VIBRATION_SPIKE: 'Hull vibration (Arduino)',
+        TEMP_ANOMALY: 'Temperature out of safe range (Arduino)',
+        PROXIMITY_ALERT: 'Object too close to spacecraft',
     };
-    return (map[type] != null ? map[type] : type) || 'Аномалия телеметрии';
+    return (map[type] != null ? map[type] : type) || 'Sensor anomaly';
 }
 function formatTrajectory(velocity) {
     if (!velocity || !Array.isArray(velocity) || velocity.length < 3) return '—';
@@ -220,18 +224,8 @@ function generateSeed() {
     return (timePart + randomPart) % (MAX_SEED + 1);
 }
 
-/** Seeds without anomalies (seed % 7 in {0, 1}). */
-const NO_ANOMALY_SEEDS = [0, 1, 7, 8, 14, 15, 21, 22, 28, 29, 35, 36, 42, 43, 49, 50, 56, 57, 63, 64, 70, 71, 77, 78, 84, 85, 91, 92, 98, 99];
-/** Seeds with anomalies (seed % 7 not in {0, 1}). */
-const WITH_ANOMALY_SEEDS = [2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 23, 24, 25, 26, 27, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 44, 45, 46, 47, 48];
-
-/** Time-based alternating seed for stream: 50% no-anomaly, 50% with-anomaly. */
 function getAlternatingStreamSeed() {
-    var periodSec = 45;
-    var tick = Math.floor(Date.now() / 1000 / periodSec);
-    var useNoAnomaly = (tick % 2) === 0;
-    var arr = useNoAnomaly ? NO_ANOMALY_SEEDS : WITH_ANOMALY_SEEDS;
-    return arr[tick % arr.length];
+    return generateSeed();
 }
 
 const STREAM_REFRESH_INTERVAL_MS = 45000;
@@ -276,6 +270,7 @@ async function loadMissionData(seed) {
     updateThreatCount(data);
     updateBatteryShields(data);
     updateDangerStatus(data);
+    await fetchArduinoLive();
     updateDangerWarnings(data);
 
     if (data.seed != null) {
@@ -698,7 +693,7 @@ function renderOrbitChart(data) {
                 symbol: 'diamond',
                 line: { color: '#fff', width: 2 },
             },
-            name: 'Корабль',
+            name: 'Spacecraft',
         },
     ];
 
@@ -722,7 +717,7 @@ function renderOrbitChart(data) {
                 y: lineY,
                 z: lineZ,
                 line: { color: 'rgba(255, 140, 66, 0.5)', width: 1, dash: 'dot' },
-                name: 'Расстояние до мусора',
+                name: 'Distance to debris',
                 hoverinfo: 'skip',
             });
         }
@@ -747,7 +742,7 @@ function renderOrbitChart(data) {
                 y: trajY,
                 z: trajZ,
                 line: { color: 'rgba(255, 140, 66, 0.4)', width: 1 },
-                name: 'Траектория мусора',
+                name: 'Debris trajectory',
                 hoverinfo: 'skip',
             });
         }
@@ -773,9 +768,9 @@ function renderOrbitChart(data) {
                 color: COLORS.orange,
                 opacity: 0.45,
             },
-            text: avoidedDebris.map(d => '(обход) ' + (d.distance_km * 1000).toFixed(0) + ' m'),
+            text: avoidedDebris.map(d => '(avoided) ' + (d.distance_km * 1000).toFixed(0) + ' m'),
             hoverinfo: 'text',
-            name: 'Мусор (обход, сзади)',
+            name: 'Debris (avoided)',
         });
     }
 
@@ -795,7 +790,7 @@ function renderOrbitChart(data) {
                 },
                 text: safeNormal.map(d => `${(d.distance_km * 1000).toFixed(0)} m · ${d.debris_type} · ${d.material || ''}`),
                 hoverinfo: 'text',
-                name: `Мусор (${safeNormal.length})`,
+                name: `Debris (${safeNormal.length})`,
             });
         }
         if (dangerousNormal.length > 0) {
@@ -815,7 +810,7 @@ function renderOrbitChart(data) {
                 },
                 text: dangerousNormal.map(d => `${(d.distance_km * 1000).toFixed(0)} m · ${d.debris_type} · ${d.material || ''}`),
                 hoverinfo: 'text',
-                name: `Опасный мусор (${dangerousNormal.length})`,
+                name: `Dangerous debris (${dangerousNormal.length})`,
             });
         }
     }
@@ -846,7 +841,7 @@ function renderOrbitChart(data) {
                 y: dangerousDebris.map(p => p[1]),
                 z: dangerousDebris.map(p => p[2]),
                 marker: { size: 12, color: '#ff4444', opacity: 0.9, symbol: 'x', line: { color: '#fff', width: 2 } },
-                name: `Опасный мусор (${dangerousDebris.length})`,
+                name: `Dangerous debris (${dangerousDebris.length})`,
             });
         }
     }
@@ -961,111 +956,120 @@ function renderOrbitChart(data) {
     }
 }
 
-// Update danger status
+var TEMP_FACTOR = 0.8;
+var TEMP_WARN_RAW = 32;
+var PROXIMITY_WARN_KM = 100;
+
 function updateDangerStatus(data) {
-    const dangerLevels = data.danger_levels || [];
-    const currentDanger = dangerLevels.length > 0 ? dangerLevels[dangerLevels.length - 1] : 0.0;
-    
-    // Update danger gauge
-    const dangerBar = document.getElementById('danger-level-bar');
-    const dangerValue = document.getElementById('danger-level-value');
+    var dangerLevels = data.danger_levels || [];
+    var currentDanger = dangerLevels.length > 0 ? dangerLevels[dangerLevels.length - 1] : 0.0;
+
+    var dangerBar = document.getElementById('danger-level-bar');
+    var dangerValue = document.getElementById('danger-level-value');
     if (dangerBar) {
         dangerBar.style.width = (currentDanger * 100) + '%';
-        if (currentDanger > 0.7) {
-            dangerBar.style.background = '#ff4444';
-        } else if (currentDanger > 0.4) {
-            dangerBar.style.background = '#ff8c42';
-        } else if (currentDanger > 0.1) {
-            dangerBar.style.background = '#ffaa00';
-        } else {
-            dangerBar.style.background = COLORS.green;
-        }
+        dangerBar.style.background = currentDanger > 0.7 ? '#ff4444' :
+                                     currentDanger > 0.4 ? '#ff8c42' :
+                                     currentDanger > 0.1 ? '#ffaa00' : COLORS.green;
     }
-    const anomalies = data.anomaly_detections || [];
+
+    var d = _arduinoLive || {};
+    var magOn = arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall);
+    var vibOn = arduinoSensorIsTrue(d.vibration);
+    var tempRaw = arduinoLiveNum(d.temperature);
+    var tempVal = tempRaw != null ? tempRaw * TEMP_FACTOR : null;
+    var tempWarn = tempRaw != null && tempRaw > TEMP_WARN_RAW;
+
+    var closestDistKm = arduinoLiveNum(d.distance_km);
+    var proximityWarn = closestDistKm != null && closestDistKm < PROXIMITY_WARN_KM;
+
+    var activeCount = (magOn ? 1 : 0) + (vibOn ? 1 : 0) + (tempWarn ? 1 : 0) + (proximityWarn ? 1 : 0);
+
     if (dangerValue) {
         var dangerLabel;
-        if (currentDanger >= 0.6) {
-            dangerLabel = 'высокая';
-        } else if (currentDanger >= 0.2 || anomalies.length > 0) {
-            dangerLabel = 'средний';
-        } else {
-            dangerLabel = 'низкий';
-        }
+        if (activeCount >= 3 || currentDanger >= 0.6) dangerLabel = 'high';
+        else if (activeCount >= 1 || currentDanger >= 0.2) dangerLabel = 'medium';
+        else dangerLabel = 'low';
         dangerValue.textContent = dangerLabel;
-        dangerValue.style.color = currentDanger > 0.7 ? '#ff4444' :
-                                  currentDanger > 0.4 ? '#ff8c42' :
-                                  currentDanger > 0.1 ? '#ffaa00' : COLORS.green;
+        dangerValue.style.color = dangerLabel === 'high' ? '#ff4444' :
+                                  dangerLabel === 'medium' ? '#ff8c42' : COLORS.green;
     }
-    
-    // Update stats (значения после подписи: уровень опасности, аномалии, топливо)
-    const collisionCount = document.getElementById('collision-count');
-    const anomalyCount = document.getElementById('anomaly-count');
-    const lowFuelCount = document.getElementById('low-fuel-count');
-    const fuelMassEl = document.getElementById('fuel-mass-value');
-    if (collisionCount) collisionCount.textContent = (data.collision_warnings || []).length;
-    if (anomalyCount) {
-        if (anomalies.length === 0) {
-            anomalyCount.textContent = '0';
+
+    var magEl = document.getElementById('danger-magnetic');
+    if (magEl) {
+        magEl.textContent = magOn ? 'DETECTED' : 'Clear';
+        magEl.style.color = magOn ? '#ff4444' : COLORS.green;
+    }
+    var tempEl = document.getElementById('danger-temperature');
+    if (tempEl) {
+        if (tempVal == null) {
+            tempEl.textContent = '—';
+            tempEl.style.color = '';
+        } else if (tempWarn) {
+            tempEl.textContent = tempVal.toFixed(1) + ' °C — WARNING';
+            tempEl.style.color = '#ff8c42';
         } else {
-            var maxScore = Math.max.apply(null, anomalies.map(function(a) { return a.score != null ? a.score : 0; }));
-            anomalyCount.textContent = 'АНОМАЛИЯ ' + (maxScore * 100).toFixed(0) + '%';
+            tempEl.textContent = tempVal.toFixed(1) + ' °C — OK';
+            tempEl.style.color = COLORS.green;
         }
     }
-    if (lowFuelCount) lowFuelCount.textContent = (data.low_fuel_warnings || []).length;
-    if (fuelMassEl) {
-        if (anomalies.length > 0) {
-            fuelMassEl.textContent = 'заканчивается';
+    var vibEl = document.getElementById('danger-vibration');
+    if (vibEl) {
+        vibEl.textContent = vibOn ? 'DETECTED' : 'None';
+        vibEl.style.color = vibOn ? '#ff8c42' : COLORS.green;
+    }
+    var proxEl = document.getElementById('danger-proximity');
+    if (proxEl) {
+        if (closestDistKm != null) {
+            proxEl.textContent = proximityWarn ? closestDistKm.toFixed(1) + ' km — DANGER' : closestDistKm.toFixed(1) + ' km — Safe';
+            proxEl.style.color = proximityWarn ? '#ff4444' : COLORS.green;
         } else {
-            const fuel = data.spacecraft_status && data.spacecraft_status.fuel != null
-                ? data.spacecraft_status.fuel
-                : (data.fuels && data.fuels.length > 0 ? data.fuels[data.fuels.length - 1] : null);
-            fuelMassEl.textContent = fuel != null ? Number(fuel).toFixed(1) : '—';
+            proxEl.textContent = '—';
+            proxEl.style.color = '';
         }
     }
-    
-    // Update footer status
-    const sysStatus = document.getElementById('sys-status');
-    const statusDot = document.getElementById('status-dot');
-    const warningsCount = document.getElementById('warnings-count');
-    const warningsText = document.getElementById('warnings-text');
-    const warningsNum = document.getElementById('warnings-num');
-    
-    const totalWarnings = (data.collision_warnings || []).length + 
-                         (data.anomaly_detections || []).length + 
-                         (data.low_fuel_warnings || []).length;
-    
-    let statusText = 'SYS NOMINAL';
-    let statusColor = COLORS.green;
-    
-    if (currentDanger > 0.7) {
-        statusText = 'STATUS: CRITICAL';
-        statusColor = '#ff4444';
-    } else if (currentDanger > 0.4) {
-        statusText = 'STATUS: WARNING';
-        statusColor = '#ff8c42';
-    } else if (currentDanger > 0.1) {
-        statusText = 'STATUS: CAUTION';
-        statusColor = '#ffaa00';
-    }
-    
-    if (sysStatus) {
-        sysStatus.textContent = statusText;
-        sysStatus.style.color = statusColor;
-    }
-    
-    if (statusDot) {
-        statusDot.style.background = statusColor;
-        statusDot.style.boxShadow = '0 0 10px ' + statusColor;
-    }
-    
-    if (totalWarnings > 0) {
+
+    var sysStatus = document.getElementById('sys-status');
+    var statusDot = document.getElementById('status-dot');
+    var warningsCount = document.getElementById('warnings-count');
+    var warningsText = document.getElementById('warnings-text');
+    var warningsNum = document.getElementById('warnings-num');
+
+    var statusText = 'SYS NOMINAL';
+    var statusColor = COLORS.green;
+    if (activeCount >= 3) { statusText = 'STATUS: CRITICAL'; statusColor = '#ff4444'; }
+    else if (activeCount >= 1) { statusText = 'STATUS: CAUTION'; statusColor = '#ff8c42'; }
+
+    if (sysStatus) { sysStatus.textContent = statusText; sysStatus.style.color = statusColor; }
+    if (statusDot) { statusDot.style.background = statusColor; statusDot.style.boxShadow = '0 0 10px ' + statusColor; }
+    if (activeCount > 0) {
         if (warningsCount) warningsCount.style.display = 'inline';
         if (warningsText) warningsText.style.display = 'inline';
-        if (warningsNum) warningsNum.textContent = totalWarnings;
+        if (warningsNum) warningsNum.textContent = activeCount;
     } else {
         if (warningsCount) warningsCount.style.display = 'none';
         if (warningsText) warningsText.style.display = 'none';
     }
+}
+
+/** Обложка с сидом: панели аномалий не показываем (только после Start/Add). */
+function isCoverVisible() {
+    var c = document.getElementById('cover');
+    if (!c) return false;
+    var s = window.getComputedStyle(c);
+    return s.display !== 'none' && s.visibility !== 'hidden';
+}
+
+/** Контекст для панели опасности до загрузки миссии (обложка) — те же правила Arduino, что и в миссии */
+function dangerWarningsDataContext() {
+    if (lastMissionData) return lastMissionData;
+    return {
+        debris: [],
+        collision_warnings: [],
+        anomaly_detections: [],
+        low_fuel_warnings: [],
+        danger_levels: [0],
+    };
 }
 
 // Update danger warnings panel
@@ -1075,111 +1079,85 @@ function updateDangerWarnings(data) {
     
     if (!dangerPanel || !dangerContent) return;
     
-    const warnings = [];
-    
-    // Client-side: if any debris is very close, add collision warning
-    const COLLISION_WARNING_KM = 0.05;
-    if (data.debris && Array.isArray(data.debris) && data.debris.length > 0) {
-        var closest = data.debris.reduce(function(acc, d) {
-            var dist = (d && typeof d.distance_km === 'number') ? d.distance_km : 1e9;
-            return dist < acc.dist ? { dist: dist, d: d } : acc;
-        }, { dist: 1e9, d: null });
-        if (closest.dist < COLLISION_WARNING_KM && closest.d) {
-            warnings.push({
-                icon: '⚠️',
-                text: 'Предупреждение о столкновении: объект на расстоянии ' + (closest.dist * 1000).toFixed(0) + ' m',
-                severity: 'HIGH',
-                time: 0,
-            });
-        }
-    }
-    
-    // Collision warnings from backend
-    (data.collision_warnings || []).forEach(w => {
-        warnings.push({
-            icon: '⚠️',
-            text: `СТОЛКНОВЕНИЕ! Вероятность: ${(w.probability * 100).toFixed(1)}%`,
-            severity: w.severity,
-            time: w.time,
-        });
-    });
-    
-    // Аномалии: считаем только неустранённые для отображения
-    var rawAnomalies = data.anomaly_detections || [];
+    var warnings = [];
+    var rawAnomalies = [];
+    var d = _arduinoLive || {};
+    var nowSec = Date.now() / 1000;
 
-    // Дополнительные аномалии на основе живых датчиков Arduino:
-    // если обнаружено магнитное поле или вибрация, считаем это аномалией.
-    // Флаг _arduinoAnomaliesSuppressed временно отключает их, пока оператор нажал «Устранить все».
+    // Reset suppression when all sensors return to normal
     try {
-        if (typeof _arduinoLive !== 'undefined' && _arduinoLive) {
-            var hasMagAnomaly = arduinoSensorIsTrue(_arduinoLive.magnetic);
-            var hasVibAnomaly = arduinoSensorIsTrue(_arduinoLive.vibration);
-            if (!hasMagAnomaly && !hasVibAnomaly) {
-                // как только датчики вернулись в норму — снова разрешаем показывать Arduino‑аномалии
-                _arduinoAnomaliesSuppressed = false;
+        var hasMagAnomaly = arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall);
+        var hasVibAnomaly = arduinoSensorIsTrue(d.vibration);
+        var tempRawW = arduinoLiveNum(d.temperature);
+        var hasTempAnomaly = tempRawW != null && tempRawW > TEMP_WARN_RAW;
+        if (!hasMagAnomaly && !hasVibAnomaly && !hasTempAnomaly) {
+            _arduinoAnomaliesSuppressed = false;
+        }
+    } catch (e) { /* ignore */ }
+
+    // 1) Magnetic field (rising-edge events + sustained)
+    try {
+        for (var hi = _hallMagneticAnomalyEvents.length - 1; hi >= 0; hi--) {
+            var hev = _hallMagneticAnomalyEvents[hi];
+            if (!hev || dismissedAnomalyKeys[hev.id]) continue;
+            rawAnomalies.unshift({ time: hev.time, score: 0.85, type: 'MAGNETIC_FIELD', stableKey: hev.id });
+        }
+        if (!_arduinoAnomaliesSuppressed && (arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall))) {
+            var anyOpenHall = false;
+            for (var hiu = 0; hiu < _hallMagneticAnomalyEvents.length; hiu++) {
+                if (_hallMagneticAnomalyEvents[hiu] && !dismissedAnomalyKeys[_hallMagneticAnomalyEvents[hiu].id]) { anyOpenHall = true; break; }
             }
-            if (!_arduinoAnomaliesSuppressed && (hasMagAnomaly || hasVibAnomaly)) {
-                var nowSec = Date.now() / 1000;
-                var baseScore = 0.7;
-                if (hasMagAnomaly && hasVibAnomaly) {
-                    baseScore = 0.9;
-                } else if (hasMagAnomaly || hasVibAnomaly) {
-                    baseScore = 0.8;
-                }
-                if (hasMagAnomaly) {
-                    rawAnomalies.push({
-                        time: nowSec,
-                        score: baseScore,
-                        type: 'MAGNETIC_FIELD',
-                    });
-                }
-                if (hasVibAnomaly) {
-                    rawAnomalies.push({
-                        time: nowSec + 0.1,
-                        score: baseScore,
-                        type: 'VIBRATION_SPIKE',
-                    });
-                }
+            if (!anyOpenHall && !dismissedAnomalyKeys['arduino_magnetic_sustained']) {
+                rawAnomalies.push({ time: nowSec, score: 0.85, type: 'MAGNETIC_FIELD', stableKey: 'arduino_magnetic_sustained' });
             }
         }
-    } catch (e) {
-        // игнорируем ошибки, чтобы не ломать основной поток отрисовки
+    } catch (e) { /* ignore */ }
+
+    // 2) Vibration
+    try {
+        if (!_arduinoAnomaliesSuppressed && hasVibAnomaly) {
+            rawAnomalies.push({ time: nowSec, score: 0.8, type: 'VIBRATION_SPIKE' });
+        }
+    } catch (e) { /* ignore */ }
+
+    // 3) Temperature anomaly
+    try {
+        if (!_arduinoAnomaliesSuppressed && hasTempAnomaly && !dismissedAnomalyKeys['arduino_temp_warn']) {
+            rawAnomalies.push({ time: nowSec, score: 0.7, type: 'TEMP_ANOMALY', stableKey: 'arduino_temp_warn' });
+        }
+    } catch (e) { /* ignore */ }
+
+    // 4) Proximity — ultrasonic distance < 100 km
+    var closestDistW = arduinoLiveNum(d.distance_km);
+    if (closestDistW != null && closestDistW < PROXIMITY_WARN_KM && !dismissedAnomalyKeys['proximity_warn']) {
+        rawAnomalies.push({ time: nowSec, score: 0.75, type: 'PROXIMITY_ALERT', stableKey: 'proximity_warn' });
     }
+
     var visibleAnomalies = [];
     rawAnomalies.forEach(function(a, idx) {
-        var key = 'anomaly_' + (a.time != null ? a.time : 0) + '_' + (a.score != null ? a.score : 0) + '_' + idx;
+        var key = a.stableKey != null ? String(a.stableKey) : ('anomaly_' + (a.time != null ? a.time : 0) + '_' + (a.score != null ? a.score : 0) + '_' + idx);
         if (dismissedAnomalyKeys[key]) return;
         visibleAnomalies.push(a);
+        var anomalyTitle;
+        if (a.type === 'MAGNETIC_FIELD') anomalyTitle = 'ANOMALY! Magnetic field detected.';
+        else if (a.type === 'VIBRATION_SPIKE') anomalyTitle = 'ANOMALY! Hull vibration detected.';
+        else if (a.type === 'TEMP_ANOMALY') anomalyTitle = 'ANOMALY! Temperature out of range.';
+        else if (a.type === 'PROXIMITY_ALERT') anomalyTitle = 'DANGER! Object too close (' + (closestDistW != null ? closestDistW.toFixed(1) : '?') + ' km).';
+        else anomalyTitle = 'ANOMALY! Level: ' + ((a.score || 0) * 100).toFixed(1) + '%';
         warnings.push({
             icon: '🚨',
-            text: 'АНОМАЛИЯ! Уровень: ' + ((a.score != null ? a.score : 0) * 100).toFixed(1) + '%',
+            text: anomalyTitle,
             severity: (a.score != null && a.score > 0.7) ? 'HIGH' : 'MEDIUM',
             time: a.time != null ? a.time : 0,
             isAnomaly: true,
             reason: getAnomalyReasonLabel(a.type),
             anomalyKey: key,
-            immediatePanel: a.type === 'VIBRATION_SPIKE' || a.type === 'MAGNETIC_FIELD',
+            immediatePanel: true,
         });
     });
     
-    // Low fuel warnings
-    (data.low_fuel_warnings || []).forEach(f => {
-        warnings.push({
-            icon: '⛽',
-            text: `НИЗКИЙ УРОВЕНЬ ТОПЛИВА! ${(f.fuel_ratio * 100).toFixed(1)}%`,
-            severity: 'MEDIUM',
-            time: f.time,
-        });
-    });
-    
-    var needsImmediatePanel = warnings.some(function(w) { return w.immediatePanel; });
-    // Пока магнит или вибрация с Arduino активны — не ждать 6 с (на случай смешанных предупреждений)
-    var liveArduinoUrgent = false;
-    try {
-        if (_arduinoLive && !_arduinoAnomaliesSuppressed) {
-            liveArduinoUrgent = arduinoSensorIsTrue(_arduinoLive.magnetic) || arduinoSensorIsTrue(_arduinoLive.vibration);
-        }
-    } catch (e) { /* ignore */ }
+    var needsImmediatePanel = warnings.length > 0;
+    var liveArduinoUrgent = !_arduinoAnomaliesSuppressed && (hasMagAnomaly || hasVibAnomaly || hasTempAnomaly);
     if (warnings.length > 0) {
         if (needsImmediatePanel || liveArduinoUrgent) {
             if (dangerPanelShowTimeoutId) {
@@ -1197,10 +1175,10 @@ function updateDangerWarnings(data) {
         var html = warnings.map(function(w) {
             var severityClass = w.severity === 'HIGH' ? 'danger-high' : 'danger-medium';
             var reasonBlock = w.isAnomaly && w.reason
-                ? '<div class="danger-warning-reason">Причина: ' + w.reason + '</div>'
+                ? '<div class="danger-warning-reason">Cause: ' + w.reason + '</div>'
                 : '';
             var btnBlock = w.isAnomaly && w.anomalyKey
-                ? '<button type="button" class="danger-warning-resolve" data-anomaly-key="' + w.anomalyKey + '">Устранить</button>'
+                ? '<button type="button" class="danger-warning-resolve" data-anomaly-key="' + w.anomalyKey + '">Resolve</button>'
                 : '';
             return '<div class="danger-warning ' + severityClass + '" data-anomaly-key="' + (w.anomalyKey || '') + '">' +
                 '<span class="danger-warning-icon">' + w.icon + '</span>' +
@@ -1213,14 +1191,14 @@ function updateDangerWarnings(data) {
                 '</div>';
         }).join('');
         if (anomalyWarnings.length > 0) {
-            html += '<div class="danger-resolve-all-wrap"><button type="button" class="danger-warning-resolve-all" id="danger-resolve-all-btn">Устранить все</button></div>';
+            html += '<div class="danger-resolve-all-wrap"><button type="button" class="danger-warning-resolve-all" id="danger-resolve-all-btn">Resolve all</button></div>';
         }
         dangerContent.innerHTML = html;
         dangerContent.querySelectorAll('.danger-warning-resolve[data-anomaly-key]').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var key = btn.getAttribute('data-anomaly-key');
                 if (key) dismissedAnomalyKeys[key] = true;
-                if (lastMissionData) updateDangerWarnings(lastMissionData);
+                updateDangerWarnings(dangerWarningsDataContext());
             });
         });
         var resolveAllBtn = document.getElementById('danger-resolve-all-btn');
@@ -1232,7 +1210,7 @@ function updateDangerWarnings(data) {
                 });
                 // Временно подавляем генерацию новых Arduino‑аномалий, пока состояние датчиков не вернётся в норму
                 _arduinoAnomaliesSuppressed = true;
-                if (lastMissionData) updateDangerWarnings(lastMissionData);
+                updateDangerWarnings(dangerWarningsDataContext());
             });
         }
         var dataForStatus = Object.assign({}, data, { anomaly_detections: visibleAnomalies });
@@ -1255,12 +1233,22 @@ function updateDangerWarnings(data) {
             noAnomalyPanel.style.display = 'none';
         }
     }
+
+    if (isCoverVisible()) {
+        if (dangerPanelShowTimeoutId) {
+            clearTimeout(dangerPanelShowTimeoutId);
+            dangerPanelShowTimeoutId = null;
+        }
+        dangerPanel.style.display = 'none';
+        if (noAnomalyPanel) noAnomalyPanel.style.display = 'none';
+    }
 }
 
 // ── Arduino live sensor data (SSE push + fetch fallback) ───────────────────
 var _arduinoLive = {
     distance_km: null,
     magnetic: null,
+    hall: null,
     temperature: null,
     humidity: null,
     vibration: null,
@@ -1268,7 +1256,11 @@ var _arduinoLive = {
     error: null,
 };
 var _arduinoPrevMagnetic = null;
+var _arduinoPrevHall = null;
 var _arduinoPrevVibration = null;
+/** События по фронту магнитного датчика (отдельные аномалии): { id, time } */
+var _hallMagneticAnomalyEvents = [];
+var HALL_MAG_EVENTS_MAX = 40;
 var _arduinoAnomaliesSuppressed = false;
 var _arduinoPollingId = null;
 var _arduinoEventSource = null;
@@ -1294,7 +1286,7 @@ function fetchArduinoLive() {
         .then(function (r) {
             if (!r.ok) {
                 var msg = r.status === 404
-                    ? 'Нет маршрута /api/arduino (установите pyserial, перезапустите сервер)'
+                    ? 'No route /api/arduino (install pyserial, restart server)'
                     : ('HTTP ' + r.status);
                 _arduinoLive = Object.assign({}, _arduinoLive, { error: msg });
                 if (_orbitPopupArduinoOpen) updatePopupWithArduino();
@@ -1307,7 +1299,7 @@ function fetchArduinoLive() {
             return data;
         })
         .catch(function () {
-            _arduinoLive = Object.assign({}, _arduinoLive, { error: 'Сеть / сервер недоступны' });
+            _arduinoLive = Object.assign({}, _arduinoLive, { error: 'Network / server unavailable' });
             if (_orbitPopupArduinoOpen) updatePopupWithArduino();
         });
 }
@@ -1319,51 +1311,43 @@ function applyArduinoLiveData(data) {
     // Магнит / вибрация: сразу пересчитать панель (без 6 с задержки и без ожидания loadMissionData).
     try {
         var prevMag = _arduinoPrevMagnetic;
+        var prevHall = _arduinoPrevHall;
         var prevVib = _arduinoPrevVibration;
         var nowMag = _arduinoLive && arduinoSensorIsTrue(_arduinoLive.magnetic);
+        var nowHall = _arduinoLive && arduinoSensorIsTrue(_arduinoLive.hall);
         var nowVib = _arduinoLive && arduinoSensorIsTrue(_arduinoLive.vibration);
+        var prevField = arduinoSensorIsTrue(prevMag) || arduinoSensorIsTrue(prevHall);
+        var liveField = nowMag || nowHall;
         _arduinoPrevMagnetic = _arduinoLive ? _arduinoLive.magnetic : null;
+        _arduinoPrevHall = _arduinoLive ? _arduinoLive.hall : null;
         _arduinoPrevVibration = _arduinoLive ? _arduinoLive.vibration : null;
-        var magRising = !arduinoSensorIsTrue(prevMag) && nowMag;
+        var fieldRising = !prevField && liveField;
         var vibRising = !arduinoSensorIsTrue(prevVib) && nowVib;
-        var mustRefreshDanger = magRising || vibRising
-            || (lastMissionData && !_arduinoAnomaliesSuppressed && ((nowMag || nowVib) && dangerPanelShowTimeoutId));
-        if (mustRefreshDanger) {
-            if (lastMissionData) {
-                if (dangerPanelShowTimeoutId) {
-                    clearTimeout(dangerPanelShowTimeoutId);
-                    dangerPanelShowTimeoutId = null;
-                }
-                updateDangerWarnings(lastMissionData);
-            } else if (magRising || vibRising) {
-                var dangerPanel = document.getElementById('danger-panel');
-                var dangerContent = document.getElementById('danger-content');
-                if (dangerPanel && dangerContent) {
-                    var tSec = Date.now() / 1000;
-                    var text;
-                    var reasonLine;
-                    if (magRising && vibRising) {
-                        text = 'АНОМАЛИЯ! Магнитное поле и вибрация (Arduino).';
-                        reasonLine = getAnomalyReasonLabel('MAGNETIC_FIELD') + ' · ' + getAnomalyReasonLabel('VIBRATION_SPIKE');
-                    } else if (magRising) {
-                        text = 'АНОМАЛИЯ! Обнаружено магнитное поле (Arduino).';
-                        reasonLine = getAnomalyReasonLabel('MAGNETIC_FIELD');
-                    } else {
-                        text = 'АНОМАЛИЯ! Обнаружена вибрация корпуса (Arduino).';
-                        reasonLine = getAnomalyReasonLabel('VIBRATION_SPIKE');
-                    }
-                    var html = '<div class="danger-warning danger-high">' +
-                        '<span class="danger-warning-icon">🚨</span>' +
-                        '<div class="danger-warning-body">' +
-                        '<span class="danger-warning-text">' + text + '</span>' +
-                        (reasonLine ? '<div class="danger-warning-reason">Причина: ' + reasonLine + '</div>' : '') +
-                        '</div>' +
-                        '<span class="danger-warning-time">T+' + tSec.toFixed(1) + 's</span>' +
-                        '</div>';
-                    dangerContent.innerHTML = html;
-                    dangerPanel.style.display = 'block';
-                }
+        if (fieldRising || vibRising) {
+            _arduinoAnomaliesSuppressed = false;
+        }
+        if (fieldRising) {
+            var hallId = 'hall_mag_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            _hallMagneticAnomalyEvents.push({ id: hallId, time: Date.now() / 1000 });
+            while (_hallMagneticAnomalyEvents.length > HALL_MAG_EVENTS_MAX) {
+                _hallMagneticAnomalyEvents.shift();
             }
+        }
+        var tLiveRaw = _arduinoLive ? arduinoLiveNum(_arduinoLive.temperature) : null;
+        var tempAnomLive = tLiveRaw != null && tLiveRaw > TEMP_WARN_RAW;
+        var anySensorActive = liveField || nowVib || tempAnomLive;
+        var mustRefreshDanger = fieldRising || vibRising;
+        var _tRes = Date.now();
+        if (anySensorActive && (_tRes - _lastArduinoDangerResyncMs >= 400)) {
+            _lastArduinoDangerResyncMs = _tRes;
+            mustRefreshDanger = true;
+        }
+        if (mustRefreshDanger) {
+            if (dangerPanelShowTimeoutId) {
+                clearTimeout(dangerPanelShowTimeoutId);
+                dangerPanelShowTimeoutId = null;
+            }
+            updateDangerWarnings(dangerWarningsDataContext());
         }
     } catch (e) {
         // не даём сбойнуть всей панели, если что-то пошло не так
@@ -1371,6 +1355,8 @@ function applyArduinoLiveData(data) {
     if (_orbitPopupArduinoOpen) {
         updatePopupWithArduino();
     }
+    updateShipStatusPanel();
+    updateDangerStatus(dangerWarningsDataContext());
 }
 
 function startArduinoPolling() {
@@ -1422,9 +1408,6 @@ function startArduinoAutoConnect() {
 
 function updatePopupWithArduino() {
     var distEl = document.getElementById('orbit-popup-distance');
-    var magEl = document.getElementById('orbit-popup-magnetic');
-    var tempEl = document.getElementById('orbit-popup-temp');
-    var vibEl = document.getElementById('orbit-popup-vibration');
     var dotEl = document.getElementById('ard-live-dot');
     var d = _arduinoLive;
     var hasData = !!(d && d.updated_at != null);
@@ -1442,38 +1425,48 @@ function updatePopupWithArduino() {
         }
     }
 
-    // Только датчик расстояния (ультразвук → км в скетче); симуляция орбиты не подмешиваем
     if (distEl) {
         var distKm = arduinoLiveNum(d.distance_km);
         distEl.textContent = (distKm != null) ? distKm.toFixed(1) + ' km' : '—';
     }
+}
+
+function updateShipStatusPanel() {
+    var d = _arduinoLive;
+    var hasData = !!(d && d.updated_at != null);
+    var err = d && d.error;
+
+    var dotEl = document.getElementById('ship-status-dot');
+    if (dotEl) {
+        if (err) {
+            dotEl.style.background = '#f97316';
+            dotEl.style.boxShadow = '0 0 6px #f97316';
+        } else {
+            dotEl.style.background = hasData ? '#22c55e' : '#64748b';
+            dotEl.style.boxShadow = hasData ? '0 0 6px #22c55e' : 'none';
+        }
+    }
+
+    var magEl = document.getElementById('ship-status-magnetic');
     if (magEl) {
-        if (d.magnetic === true) {
-            magEl.textContent = 'Обнаружено';
+        var magOn = arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall);
+        if (magOn) {
+            magEl.textContent = 'Detected';
             magEl.style.color = '#ff5555';
-        } else if (d.magnetic === false) {
-            magEl.textContent = 'Нет';
+        } else if (d.magnetic === false || d.hall === false) {
+            magEl.textContent = 'Clear';
             magEl.style.color = '#22c55e';
         } else {
             magEl.textContent = '—';
             magEl.style.color = '';
         }
     }
+
+    var tempEl = document.getElementById('ship-status-temp');
     if (tempEl) {
-        var t = arduinoLiveNum(d.temperature);
-        tempEl.textContent = (t != null) ? t.toFixed(1) + ' °C' : '—';
-    }
-    if (vibEl) {
-        if (d.vibration === true) {
-            vibEl.textContent = 'Да';
-            vibEl.style.color = '#f97316';
-        } else if (d.vibration === false) {
-            vibEl.textContent = 'Нет';
-            vibEl.style.color = '#22c55e';
-        } else {
-            vibEl.textContent = '—';
-            vibEl.style.color = '';
-        }
+        var tRaw = arduinoLiveNum(d.temperature);
+        var tScaled = tRaw != null ? tRaw * TEMP_FACTOR : null;
+        tempEl.textContent = (tScaled != null) ? tScaled.toFixed(1) + ' °C' : '—';
     }
 }
 
@@ -1549,7 +1542,7 @@ function initCover() {
             ev.stopPropagation();
             var seed = generateSeed();
             showSeedOnCover(seed);
-            setCoverStatus('Сид сгенерирован. Нажмите Start для запуска сайта с этим сидом.');
+            setCoverStatus('Seed generated. Press Start to launch with this seed.');
         });
     }
 
@@ -1564,7 +1557,7 @@ function initCover() {
             if (clicked.id === 'cover-seed-btn') {
                 var seed = generateSeed();
                 showSeedOnCover(seed);
-                setCoverStatus('Сид сгенерирован. Нажмите Start для запуска сайта с этим сидом.');
+                setCoverStatus('Seed generated. Press Start to launch with this seed.');
                 return;
             }
 
@@ -1573,12 +1566,12 @@ function initCover() {
                 if (!value) return;
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(value).then(function() {
-                        setCoverStatus('Сид скопирован.', false);
+                        setCoverStatus('Seed copied.', false);
                     }).catch(function() {
-                        setCoverStatus('Не удалось скопировать.', true);
+                        setCoverStatus('Failed to copy.', true);
                     });
                 } else {
-                    setCoverStatus('Копирование недоступно в этом браузере.', true);
+                    setCoverStatus('Clipboard not available in this browser.', true);
                 }
                 return;
             }
@@ -1587,7 +1580,7 @@ function initCover() {
                 var raw = (seedInput && (seedInput.value || '').trim()) || '';
                 var seedAdd = parseInt(raw, 10);
                 if (raw === '' || isNaN(seedAdd)) {
-                    setCoverStatus('Введите сид (целое число).', true);
+                    setCoverStatus('Enter a seed (integer).', true);
                     return;
                 }
                 setAddLoading(true);
@@ -1613,11 +1606,11 @@ function initCover() {
                 var rawStart = (seedInput && (seedInput.value || '').trim()) || '';
                 var seedStart = rawStart === '' ? null : parseInt(rawStart, 10);
                 if (rawStart !== '' && isNaN(seedStart)) {
-                    setCoverStatus('Введите сид (целое число) или нажмите Seed и затем Start.', true);
+                    setCoverStatus('Enter a seed (integer) or press Seed then Start.', true);
                     return;
                 }
                 setLoading(true);
-                setCoverStatus('Запуск с сидом ' + (seedStart != null ? seedStart : 'по умолчанию') + '…');
+                setCoverStatus('Launching with seed ' + (seedStart != null ? seedStart : 'default') + '…');
                 loadMissionData(seedStart)
                     .then(function() {
                         if (cover) cover.style.display = 'none';
@@ -1653,10 +1646,15 @@ function initCover() {
     var _logRefreshInterval = null;
 
     function _parseLogLine(line) {
-        // "[2026-04-03 12:34:56] dist=144.0 km | mag=DETECTED | temp=24.5 °C | hum=65.0 % | vib=YES"
-        var m = line.match(/^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=.+?\s*\|\s*vib=(.+)$/);
+        var m = line.match(
+            /^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*hall=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=.+?\s*\|\s*vib=(.+)$/
+        );
+        if (m) {
+            return { time: m[1], dist: m[2], mag: m[3].trim(), hall: m[4].trim(), temp: m[5], vib: m[6].trim() };
+        }
+        m = line.match(/^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=.+?\s*\|\s*vib=(.+)$/);
         if (!m) return null;
-        return { time: m[1], dist: m[2], mag: m[3].trim(), temp: m[4], vib: m[5].trim() };
+        return { time: m[1], dist: m[2], mag: m[3].trim(), hall: null, temp: m[4], vib: m[5].trim() };
     }
 
     function _renderTable(lines) {
@@ -1681,12 +1679,15 @@ function initCover() {
         var html = '';
         for (var j = 0; j < parsed.length; j++) {
             var r = parsed[j];
-            var magClass = r.mag === 'DETECTED' ? 'log-mag-yes' : 'log-mag-no';
+            var magCell = r.hall != null
+                ? ((r.mag === 'DETECTED' || r.hall === 'DETECTED') ? 'DETECTED' : r.mag)
+                : r.mag;
+            var magClass = magCell === 'DETECTED' ? 'log-mag-yes' : 'log-mag-no';
             var vibClass = r.vib === 'YES' ? 'log-vib-yes' : 'log-vib-no';
             html += '<tr>' +
                 '<td>' + r.time + '</td>' +
                 '<td>' + r.dist + '</td>' +
-                '<td class="' + magClass + '">' + r.mag + '</td>' +
+                '<td class="' + magClass + '">' + magCell + '</td>' +
                 '<td>' + r.temp + '</td>' +
                 '<td class="' + vibClass + '">' + r.vib + '</td>' +
                 '</tr>';
@@ -1732,7 +1733,7 @@ function initCover() {
                 var files = data.files || [];
 
                 if (files.length === 0) {
-                    sel.innerHTML = '<option value="">— нет файлов —</option>';
+                    sel.innerHTML = '<option value="">— no files —</option>';
                     _logCurrentFile = null;
                     return;
                 }

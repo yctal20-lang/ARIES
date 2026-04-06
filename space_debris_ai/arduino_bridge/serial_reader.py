@@ -2,7 +2,9 @@
 Background Serial reader for Arduino (ard.ino sketch).
 
 Typical Serial block (every ~200 ms):
-    Magnetic field detected | Clear space
+    HALL: DETECTED | HALL: CLEAR
+    MAGNETIC: DETECTED | MAGNETIC: CLEAR
+    (legacy) Magnetic field detected | Clear space — выставляет и hall, и magnetic
     Distance to object: 144.0 km
     Temperature: 24.5 °C
     Vibration detected! | No vibration
@@ -39,6 +41,7 @@ _lock = threading.Lock()
 _latest: Dict[str, Any] = {
     "distance_km": None,
     "magnetic": None,
+    "hall": None,
     "temperature": None,
     "humidity": None,
     "vibration": None,
@@ -58,6 +61,8 @@ _RE_TEMP_HUM = re.compile(
 # ° optional; \b after C can fail on some Unicode builds — fallback below
 _RE_TEMP_ONLY = re.compile(r"Temperature:\s*([\d.]+)\s*°?\s*C", re.IGNORECASE)
 _RE_TEMP_LOOSE = re.compile(r"Temperature\s*:\s*([\d.]+)", re.IGNORECASE)
+_RE_HALL_TAG = re.compile(r"^\s*hall:\s*(detected|clear)\s*$", re.IGNORECASE)
+_RE_MAGNETIC_TAG = re.compile(r"^\s*magnetic:\s*(detected|clear)\s*$", re.IGNORECASE)
 
 # Один порт в строке (например COM8). Не зависит от переменных окружения процесса Flask.
 _CONFIG_PORT_FILE = Path(__file__).resolve().parent / "arduino_port.txt"
@@ -115,6 +120,8 @@ def _find_arduino_port() -> Optional[str]:
     probe_substrings = (
         "distance to object",
         "magnetic field",
+        "magnetic:",
+        "hall:",
         "clear space",
         "vibration detected",
         "no vibration",
@@ -178,19 +185,21 @@ def _write_sensor_log(snapshot: Dict[str, Any]) -> None:
 
         dist = snapshot.get("distance_km")
         mag = snapshot.get("magnetic")
+        hall = snapshot.get("hall")
         temp = snapshot.get("temperature")
         hum = snapshot.get("humidity")
         vib = snapshot.get("vibration")
 
         dist_s = f"{dist:.1f} km" if dist is not None else "—"
         mag_s = ("DETECTED" if mag else "clear") if mag is not None else "—"
+        hall_s = ("DETECTED" if hall else "clear") if hall is not None else "—"
         temp_s = f"{temp:.1f} °C" if temp is not None else "—"
         hum_s = f"{hum:.1f} %" if hum is not None else "—"
         vib_s = ("YES" if vib else "no") if vib is not None else "—"
 
         line = (
             f"[{ts_str}] "
-            f"dist={dist_s} | mag={mag_s} | temp={temp_s} | "
+            f"dist={dist_s} | mag={mag_s} | hall={hall_s} | temp={temp_s} | "
             f"hum={hum_s} | vib={vib_s}\n"
         )
 
@@ -203,6 +212,7 @@ def _write_sensor_log(snapshot: Dict[str, Any]) -> None:
             f.write(f"Timestamp : {ts_str}\n")
             f.write(f"Distance  : {dist_s}\n")
             f.write(f"Magnetic  : {mag_s}\n")
+            f.write(f"Hall      : {hall_s}\n")
             f.write(f"Temp      : {temp_s}\n")
             f.write(f"Humidity  : {hum_s}\n")
             f.write(f"Vibration : {vib_s}\n")
@@ -219,13 +229,28 @@ def _parse_block(lines: list[str]) -> None:
         if re.match(r"^-{3,}$", stripped):
             continue
 
-        if "magnetic field" in stripped.lower():
+        low = stripped.lower()
+        mh = _RE_HALL_TAG.match(stripped)
+        if mh:
+            with _lock:
+                _latest["hall"] = mh.group(1).lower() == "detected"
+            continue
+        mm = _RE_MAGNETIC_TAG.match(stripped)
+        if mm:
+            with _lock:
+                _latest["magnetic"] = mm.group(1).lower() == "detected"
+            continue
+
+        # Старый скетч: одна строка на оба смысла (датчик на пине Холла)
+        if "magnetic field" in low and "detected" in low:
             with _lock:
                 _latest["magnetic"] = True
+                _latest["hall"] = True
             continue
-        if "clear space" in stripped.lower():
+        if "clear space" in low:
             with _lock:
                 _latest["magnetic"] = False
+                _latest["hall"] = False
             continue
 
         m = _RE_DISTANCE.search(stripped)
@@ -249,7 +274,6 @@ def _parse_block(lines: list[str]) -> None:
                 _latest["temperature"] = float(m.group(1))
             continue
 
-        low = stripped.lower()
         if "temperature sensor error" in low or low.strip() == "sensor error":
             with _lock:
                 _latest["temperature"] = None

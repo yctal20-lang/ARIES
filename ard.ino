@@ -5,6 +5,8 @@
 const int hallPin = 6;
 int hallState = 0;
 
+const int magneticSensorPin = 7;
+const bool USE_SEPARATE_MAGNETIC_PIN = false;
 
 const int trigPin = 3;
 const int echoPin = 4;
@@ -22,7 +24,10 @@ DHT dht(DHTPIN, DHTTYPE);
 
 
 void setup() {
-  pinMode(hallPin, INPUT);        
+  pinMode(hallPin, INPUT);
+  if (USE_SEPARATE_MAGNETIC_PIN) {
+    pinMode(magneticSensorPin, INPUT);
+  }
   pinMode(trigPin, OUTPUT);       
   pinMode(echoPin, INPUT);
 
@@ -37,11 +42,9 @@ void setup() {
 void loop() {
   
   hallState = digitalRead(hallPin);
-  if (hallState == LOW) {
-    Serial.println("Magnetic field detected");
-  } else {
-    Serial.println("Clear space");
-  }
+  Serial.println(hallState == LOW ? "HALL: DETECTED" : "HALL: CLEAR");
+  int magneticState = USE_SEPARATE_MAGNETIC_PIN ? digitalRead(magneticSensorPin) : hallState;
+  Serial.println(magneticState == LOW ? "MAGNETIC: DETECTED" : "MAGNETIC: CLEAR");
 
   
   digitalWrite(trigPin, LOW);

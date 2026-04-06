@@ -60,7 +60,6 @@ try:
 except ImportError:
     pass
 
-
 def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
     """
     Симуляция для дашборда: без PyTorch, быстрый старт.
@@ -137,27 +136,7 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
                 })
                 danger_level = max(danger_level, 0.3)
 
-        # 2) Аномалия по шагу/сиду (сиды с seed % 7 в {0, 1} — без аномалий); разные причины
-        _ANOMALY_TYPES = [
-            "TELEMETRY_ANOMALY",
-            "SENSOR_DEVIATION",
-            "COMM_LOSS",
-            "ORIENTATION_ANOMALY",
-            "GYRO_DRIFT",
-            "POWER_FLUCTUATION",
-        ]
-        if step > 20 and (step + seed) % 37 == 0 and ((seed % 7) not in (0, 1)):
-            score = 0.4 + np.random.rand() * 0.4
-            n_anom = len(data["anomaly_detections"])
-            atype = _ANOMALY_TYPES[(step + seed + n_anom) % len(_ANOMALY_TYPES)]
-            data["anomaly_detections"].append({
-                "time": float(t),
-                "score": float(score),
-                "type": atype,
-            })
-            danger_level = max(danger_level, score)
-
-        # 3) Низкое топливо
+        # 2) Низкое топливо
         fuel_ratio = env.spacecraft.fuel_mass / config.fuel_mass if config.fuel_mass > 0 else 1.0
         if step > num_steps * 0.5:
             fuel_ratio = max(0.0, fuel_ratio - 0.002 * (step - num_steps * 0.5))
@@ -172,10 +151,6 @@ def run_simulation(num_steps: int = 150, seed: int = 42) -> dict:
         data["danger_levels"].append(float(danger_level))
         if term or trunc:
             break
-
-    # Ограничение аномалий: не выводить десятки — достаточно несколько за миссию
-    MAX_ANOMALIES_PER_MISSION = 5
-    data["anomaly_detections"] = (data.get("anomaly_detections") or [])[:MAX_ANOMALIES_PER_MISSION]
 
     data["debris_positions"] = [d.position.tolist() for d in env.debris_objects]
     sc_pos = env.spacecraft.position
