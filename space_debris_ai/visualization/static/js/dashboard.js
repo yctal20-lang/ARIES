@@ -71,7 +71,6 @@ var dismissedAnomalyKeys = {}; // ключи устранённых аномал
 var noAnomalyPanelDismissed = false; // закрыла зелёное окно — больше не показывать
 var dangerPanelShowTimeoutId = null;  // задержка перед показом красного окна (не так быстро)
 var DANGER_PANEL_DELAY_MS = 6000;    // 6 сек до показа панели опасности
-var _orbitPopupRelVelKmS = null;
 /** Расстояние до выбранного мусора из симуляции (км), пока попап открыт */
 var _orbitPopupSimDistanceKm = null;
 var _popupArduinoIntervalId = null;
@@ -926,10 +925,9 @@ function renderOrbitChart(data) {
         const cd = pt.customdata;
         if (!cd || !Array.isArray(cd) || cd.length < 2) return;
         const baseSize = cd[0], debrisType = cd[2], material = cd[3];
-        const velocity = cd[4], distanceKm = cd[5], relVelKmS = cd[6], objectId = cd[7];
+        const velocity = cd[4], distanceKm = cd[5], objectId = cd[7];
         const popup = document.getElementById('orbit-debris-popup');
         if (popup) {
-            _orbitPopupRelVelKmS = relVelKmS;
             var sd = (distanceKm != null && distanceKm !== '') ? Number(distanceKm) : null;
             _orbitPopupSimDistanceKm = (sd != null && !isNaN(sd)) ? sd : null;
             _orbitPopupArduinoOpen = true;
@@ -956,7 +954,6 @@ function renderOrbitChart(data) {
         popupCloseBtn.addEventListener('click', function() {
             var p = document.getElementById('orbit-debris-popup');
             if (p) p.style.display = 'none';
-            _orbitPopupRelVelKmS = null;
             _orbitPopupSimDistanceKm = null;
             _orbitPopupArduinoOpen = false;
             stopPopupArduinoPolling();
@@ -1115,8 +1112,8 @@ function updateDangerWarnings(data) {
     // Флаг _arduinoAnomaliesSuppressed временно отключает их, пока оператор нажал «Устранить все».
     try {
         if (typeof _arduinoLive !== 'undefined' && _arduinoLive) {
-            var hasMagAnomaly = _arduinoLive.magnetic === true;
-            var hasVibAnomaly = _arduinoLive.vibration === true;
+            var hasMagAnomaly = arduinoSensorIsTrue(_arduinoLive.magnetic);
+            var hasVibAnomaly = arduinoSensorIsTrue(_arduinoLive.vibration);
             if (!hasMagAnomaly && !hasVibAnomaly) {
                 // как только датчики вернулись в норму — снова разрешаем показывать Arduino‑аномалии
                 _arduinoAnomaliesSuppressed = false;
@@ -1161,7 +1158,7 @@ function updateDangerWarnings(data) {
             isAnomaly: true,
             reason: getAnomalyReasonLabel(a.type),
             anomalyKey: key,
-            immediatePanel: a.type === 'VIBRATION_SPIKE',
+            immediatePanel: a.type === 'VIBRATION_SPIKE' || a.type === 'MAGNETIC_FIELD',
         });
     });
     
@@ -1176,8 +1173,15 @@ function updateDangerWarnings(data) {
     });
     
     var needsImmediatePanel = warnings.some(function(w) { return w.immediatePanel; });
+    // Пока магнит или вибрация с Arduino активны — не ждать 6 с (на случай смешанных предупреждений)
+    var liveArduinoUrgent = false;
+    try {
+        if (_arduinoLive && !_arduinoAnomaliesSuppressed) {
+            liveArduinoUrgent = arduinoSensorIsTrue(_arduinoLive.magnetic) || arduinoSensorIsTrue(_arduinoLive.vibration);
+        }
+    } catch (e) { /* ignore */ }
     if (warnings.length > 0) {
-        if (needsImmediatePanel) {
+        if (needsImmediatePanel || liveArduinoUrgent) {
             if (dangerPanelShowTimeoutId) {
                 clearTimeout(dangerPanelShowTimeoutId);
                 dangerPanelShowTimeoutId = null;
@@ -1275,6 +1279,16 @@ function arduinoLiveNum(v) {
     return isNaN(n) ? null : n;
 }
 
+/** Датчик Arduino «включён» (true / 1 / "true" и т.п.) — для магнита и вибрации */
+function arduinoSensorIsTrue(v) {
+    if (v === true || v === 1) return true;
+    if (typeof v === 'string') {
+        var s = v.trim().toLowerCase();
+        return s === '1' || s === 'true' || s === 'yes' || s === 'on';
+    }
+    return false;
+}
+
 function fetchArduinoLive() {
     return fetch('/api/arduino/live')
         .then(function (r) {
@@ -1302,25 +1316,26 @@ function applyArduinoLiveData(data) {
     if (!data || typeof data !== 'object') return;
     _arduinoLive = Object.assign({}, _arduinoLive, data);
 
-    // При первом появлении магнитного поля / вибрации с Arduino сразу обновляем панель опасности,
-    // без ожидания следующего loadMissionData (~45 с) и без 6 с задержки для вибрации.
+    // Магнит / вибрация: сразу пересчитать панель (без 6 с задержки и без ожидания loadMissionData).
     try {
         var prevMag = _arduinoPrevMagnetic;
         var prevVib = _arduinoPrevVibration;
-        var nowMag = _arduinoLive && _arduinoLive.magnetic === true;
-        var nowVib = _arduinoLive && _arduinoLive.vibration === true;
+        var nowMag = _arduinoLive && arduinoSensorIsTrue(_arduinoLive.magnetic);
+        var nowVib = _arduinoLive && arduinoSensorIsTrue(_arduinoLive.vibration);
         _arduinoPrevMagnetic = _arduinoLive ? _arduinoLive.magnetic : null;
         _arduinoPrevVibration = _arduinoLive ? _arduinoLive.vibration : null;
-        var magRising = !prevMag && nowMag;
-        var vibRising = !prevVib && nowVib;
-        if (magRising || vibRising) {
+        var magRising = !arduinoSensorIsTrue(prevMag) && nowMag;
+        var vibRising = !arduinoSensorIsTrue(prevVib) && nowVib;
+        var mustRefreshDanger = magRising || vibRising
+            || (lastMissionData && !_arduinoAnomaliesSuppressed && ((nowMag || nowVib) && dangerPanelShowTimeoutId));
+        if (mustRefreshDanger) {
             if (lastMissionData) {
                 if (dangerPanelShowTimeoutId) {
                     clearTimeout(dangerPanelShowTimeoutId);
                     dangerPanelShowTimeoutId = null;
                 }
                 updateDangerWarnings(lastMissionData);
-            } else {
+            } else if (magRising || vibRising) {
                 var dangerPanel = document.getElementById('danger-panel');
                 var dangerContent = document.getElementById('danger-content');
                 if (dangerPanel && dangerContent) {
@@ -1355,19 +1370,6 @@ function applyArduinoLiveData(data) {
     }
     if (_orbitPopupArduinoOpen) {
         updatePopupWithArduino();
-    }
-}
-
-function updateOrbitPopupTtc() {
-    var ttcEl = document.getElementById('orbit-popup-ttc');
-    if (!ttcEl || !_orbitPopupArduinoOpen) return;
-    var distKm = _arduinoLive.distance_km != null ? _arduinoLive.distance_km : _orbitPopupSimDistanceKm;
-    var rv = _orbitPopupRelVelKmS;
-    if (distKm != null && rv != null && rv > 1e-6) {
-        var ttcSec = distKm / rv;
-        ttcEl.textContent = ttcSec >= 60 ? (ttcSec / 60).toFixed(1) + ' min' : ttcSec.toFixed(1) + ' s';
-    } else {
-        ttcEl.textContent = '—';
     }
 }
 
@@ -1473,7 +1475,6 @@ function updatePopupWithArduino() {
             vibEl.style.color = '';
         }
     }
-    updateOrbitPopupTtc();
 }
 
 function startPopupArduinoPolling() {
@@ -1653,9 +1654,9 @@ function initCover() {
 
     function _parseLogLine(line) {
         // "[2026-04-03 12:34:56] dist=144.0 km | mag=DETECTED | temp=24.5 °C | hum=65.0 % | vib=YES"
-        var m = line.match(/^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=(.+?)\s*\|\s*vib=(.+)$/);
+        var m = line.match(/^\[(.+?)\]\s+dist=(.+?)\s*\|\s*mag=(.+?)\s*\|\s*temp=(.+?)\s*\|\s*hum=.+?\s*\|\s*vib=(.+)$/);
         if (!m) return null;
-        return { time: m[1], dist: m[2], mag: m[3].trim(), temp: m[4], hum: m[5], vib: m[6].trim() };
+        return { time: m[1], dist: m[2], mag: m[3].trim(), temp: m[4], vib: m[5].trim() };
     }
 
     function _renderTable(lines) {
@@ -1687,7 +1688,6 @@ function initCover() {
                 '<td>' + r.dist + '</td>' +
                 '<td class="' + magClass + '">' + r.mag + '</td>' +
                 '<td>' + r.temp + '</td>' +
-                '<td>' + r.hum + '</td>' +
                 '<td class="' + vibClass + '">' + r.vib + '</td>' +
                 '</tr>';
         }

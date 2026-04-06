@@ -230,7 +230,7 @@ for _ in range(1000):
 
 - **Top bar** — clock, mission badge, comm indicators, battery
 - **Left** — **Velocity** (gauge + readouts), **Environment** (grid)
-- **Center** — **Trajectory**: 3D scene (Plotly.js) with Earth, path, debris; obstacle count; **debris popup** (size, material, type, trajectory; **ARDUINO LIVE** block — distance, magnetic field, temperature, time-to-collision when data is available)
+- **Center** — **Trajectory**: 3D scene (Plotly.js) with Earth, path, debris; obstacle count; **debris popup** (size, material, type, trajectory; **ARDUINO LIVE** block — distance, magnetic field, temperature when data is available)
 - **Radar** — PPI-style canvas, threat count
 - **Danger Status** — danger gauge, collision / anomaly / fuel counters
 - **Right** — **System Health**, **AI Copilot** cards
