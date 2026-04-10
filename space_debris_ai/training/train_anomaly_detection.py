@@ -17,17 +17,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from space_debris_ai.models.level2_safety.anomaly_detection import LSTMAutoencoder, AnomalyDetector
 from space_debris_ai.simulation import OrbitalEnv, EnvConfig
+from space_debris_ai.sensors.virtual.hub import TELEMETRY_DIM
 
 
 class TelemetryDataset(Dataset):
     """Dataset for telemetry sequences."""
     
     def __init__(self, sequences, seq_len=50):
-        """
-        Args:
-            sequences: List of telemetry sequences [num_samples, seq_len, features]
-            seq_len: Sequence length
-        """
         self.sequences = sequences
         self.seq_len = seq_len
     
@@ -36,7 +32,6 @@ class TelemetryDataset(Dataset):
     
     def __getitem__(self, idx):
         seq = self.sequences[idx]
-        # Pad or truncate to seq_len
         if len(seq) < self.seq_len:
             pad = np.zeros((self.seq_len - len(seq), seq.shape[1]))
             seq = np.vstack([seq, pad])
@@ -46,11 +41,18 @@ class TelemetryDataset(Dataset):
         return torch.FloatTensor(seq)
 
 
-def generate_training_data(num_episodes=100, seq_len=50, seed=42):
-    """Generate telemetry data from simulation."""
+def generate_training_data(num_episodes=100, seq_len=50, seed=42, use_virtual_sensors=True):
+    """Generate telemetry data from simulation.
+
+    When *use_virtual_sensors* is True the full 160-dim telemetry vector
+    from VirtualSensorHub is used instead of the raw 12-dim observation slice.
+    """
     np.random.seed(seed)
     
-    env_config = EnvConfig()
+    env_config = EnvConfig(
+        use_virtual_sensors=use_virtual_sensors,
+        virtual_sensor_seed=seed,
+    )
     env = OrbitalEnv(env_config)
     
     sequences = []
@@ -61,13 +63,14 @@ def generate_training_data(num_episodes=100, seq_len=50, seed=42):
         episode_data = []
         
         for step in range(1000):
-            # Sample random action
             action = env.action_space.sample()
             obs, reward, done, truncated, info = env.step(action)
-            
-            # Extract telemetry features (position, velocity, attitude, etc.)
-            # obs contains: position(3), velocity(3), attitude(4), angular_vel(3), fuel, battery, etc.
-            features = obs[:12]  # First 12 features
+
+            if use_virtual_sensors:
+                features = obs  # full 160-dim telemetry vector
+            else:
+                features = obs[:12]
+
             episode_data.append(features)
             
             if done or truncated:
@@ -81,7 +84,7 @@ def generate_training_data(num_episodes=100, seq_len=50, seed=42):
 
 
 def train_anomaly_detection(
-    input_dim: int = 12,
+    input_dim: int = TELEMETRY_DIM,
     seq_len: int = 50,
     hidden_dim: int = 64,
     num_layers: int = 2,
@@ -92,6 +95,7 @@ def train_anomaly_detection(
     device: str = "auto",
     checkpoint_dir: str = "checkpoints/anomaly_detection",
     seed: int = 42,
+    use_virtual_sensors: bool = True,
 ):
     """
     Train anomaly detection autoencoder.
@@ -123,7 +127,13 @@ def train_anomaly_detection(
     
     # Generate training data
     print("Generating training data...")
-    sequences = generate_training_data(num_episodes=100, seq_len=seq_len, seed=seed)
+    sequences = generate_training_data(
+        num_episodes=100, seq_len=seq_len, seed=seed,
+        use_virtual_sensors=use_virtual_sensors,
+    )
+    if sequences and use_virtual_sensors:
+        input_dim = sequences[0].shape[1]
+        print(f"Using virtual sensors: input_dim={input_dim}")
     
     # Create dataset and dataloader
     dataset = TelemetryDataset(sequences, seq_len=seq_len)
@@ -191,7 +201,7 @@ def train_anomaly_detection(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Anomaly Detection Model")
-    parser.add_argument("--input-dim", type=int, default=12)
+    parser.add_argument("--input-dim", type=int, default=TELEMETRY_DIM)
     parser.add_argument("--seq-len", type=int, default=50)
     parser.add_argument("--hidden-dim", type=int, default=64)
     parser.add_argument("--num-layers", type=int, default=2)
@@ -201,6 +211,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints/anomaly_detection")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-virtual-sensors", action="store_true",
+                        help="Disable virtual sensors (use legacy 12-dim obs)")
     
     args = parser.parse_args()
     
@@ -215,5 +227,6 @@ if __name__ == "__main__":
         device=args.device,
         checkpoint_dir=args.checkpoint_dir,
         seed=args.seed,
+        use_virtual_sensors=not args.no_virtual_sensors,
     )
 

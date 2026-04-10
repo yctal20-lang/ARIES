@@ -4,8 +4,6 @@ Training script for Collision Avoidance module (SAC agent).
 
 import argparse
 import os
-import sys
-from pathlib import Path
 import numpy as np
 import torch
 from stable_baselines3 import SAC
@@ -13,9 +11,6 @@ from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import configure
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from space_debris_ai.simulation import OrbitalEnv, EnvConfig
 from space_debris_ai.core.config import SystemConfig, TrainingConfig
@@ -33,9 +28,9 @@ def make_env(config: EnvConfig, rank: int = 0, seed: int = 0):
 
 def train_collision_avoidance(
     total_timesteps: int = 1_000_000,
-    num_envs: int = 8,
+    num_envs: int = 4,
     learning_rate: float = 3e-4,
-    buffer_size: int = 1_000_000,
+    buffer_size: int = 300_000,
     batch_size: int = 256,
     gamma: float = 0.99,
     tau: float = 0.005,
@@ -45,6 +40,7 @@ def train_collision_avoidance(
     eval_freq: int = 50_000,
     save_freq: int = 100_000,
     seed: int = 42,
+    use_virtual_sensors: bool = True,
 ):
     """
     Train collision avoidance agent using SAC.
@@ -80,6 +76,8 @@ def train_collision_avoidance(
         collision_penalty=-1000.0,
         safety_bonus=0.1,
         fuel_penalty=-0.01,
+        use_virtual_sensors=use_virtual_sensors,
+        virtual_sensor_seed=seed,
     )
     
     # Create environments
@@ -142,12 +140,14 @@ def train_collision_avoidance(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Collision Avoidance Agent")
     parser.add_argument("--total-timesteps", type=int, default=1_000_000)
-    parser.add_argument("--num-envs", type=int, default=8)
+    parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints/collision_avoidance")
     parser.add_argument("--log-dir", type=str, default="logs/collision_avoidance")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-virtual-sensors", action="store_true",
+                        help="Disable virtual sensors (use legacy 44-dim obs)")
     
     args = parser.parse_args()
     
@@ -159,5 +159,6 @@ if __name__ == "__main__":
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
         seed=args.seed,
+        use_virtual_sensors=not args.no_virtual_sensors,
     )
 

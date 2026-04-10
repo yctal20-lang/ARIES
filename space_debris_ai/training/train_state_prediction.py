@@ -21,6 +21,7 @@ from space_debris_ai.models.level3_mission_critical.state_prediction import (
     StatePredictionModule,
 )
 from space_debris_ai.simulation import OrbitalEnv, EnvConfig
+from space_debris_ai.sensors.virtual.hub import TELEMETRY_DIM
 
 
 class StateSequenceDataset(Dataset):
@@ -48,11 +49,14 @@ class StateSequenceDataset(Dataset):
         return torch.FloatTensor(input_seq), torch.FloatTensor(target_seq)
 
 
-def generate_training_data(num_episodes=100, seq_len=100, seed=42):
+def generate_training_data(num_episodes=100, seq_len=100, seed=42, use_virtual_sensors=True):
     """Generate state sequence data from simulation."""
     np.random.seed(seed)
     
-    env_config = EnvConfig()
+    env_config = EnvConfig(
+        use_virtual_sensors=use_virtual_sensors,
+        virtual_sensor_seed=seed,
+    )
     env = OrbitalEnv(env_config)
     
     sequences = []
@@ -63,12 +67,14 @@ def generate_training_data(num_episodes=100, seq_len=100, seed=42):
         episode_data = []
         
         for step in range(seq_len):
-            # Sample random action
             action = env.action_space.sample()
             obs, reward, done, truncated, info = env.step(action)
-            
-            # Extract state (position, velocity, attitude, angular velocity)
-            state = obs[:13]  # 13D state
+
+            if use_virtual_sensors:
+                state = obs  # full 160-dim telemetry vector
+            else:
+                state = obs[:13]
+
             episode_data.append(state)
             
             if done or truncated:
@@ -82,8 +88,8 @@ def generate_training_data(num_episodes=100, seq_len=100, seed=42):
 
 
 def train_state_prediction(
-    input_dim: int = 13,
-    output_dim: int = 10,
+    input_dim: int = TELEMETRY_DIM,
+    output_dim: int = TELEMETRY_DIM,
     prediction_horizon: int = 10,
     num_channels: list = [64, 128, 256],
     kernel_size: int = 3,
@@ -95,6 +101,7 @@ def train_state_prediction(
     device: str = "auto",
     checkpoint_dir: str = "checkpoints/state_prediction",
     seed: int = 42,
+    use_virtual_sensors: bool = True,
 ):
     """
     Train state prediction model.
@@ -128,7 +135,14 @@ def train_state_prediction(
     
     # Generate training data
     print("Generating training data...")
-    sequences = generate_training_data(num_episodes=100, seq_len=100, seed=seed)
+    sequences = generate_training_data(
+        num_episodes=100, seq_len=100, seed=seed,
+        use_virtual_sensors=use_virtual_sensors,
+    )
+    if sequences and use_virtual_sensors:
+        input_dim = sequences[0].shape[1]
+        output_dim = input_dim
+        print(f"Using virtual sensors: input_dim={input_dim}")
     
     # Create dataset and dataloader
     dataset = StateSequenceDataset(sequences, prediction_horizon=prediction_horizon)
@@ -204,8 +218,8 @@ def train_state_prediction(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train State Prediction Model")
-    parser.add_argument("--input-dim", type=int, default=13)
-    parser.add_argument("--output-dim", type=int, default=10)
+    parser.add_argument("--input-dim", type=int, default=TELEMETRY_DIM)
+    parser.add_argument("--output-dim", type=int, default=TELEMETRY_DIM)
     parser.add_argument("--prediction-horizon", type=int, default=10)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--batch-size", type=int, default=32)
@@ -214,6 +228,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints/state_prediction")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-virtual-sensors", action="store_true",
+                        help="Disable virtual sensors (use legacy 13-dim obs)")
     
     args = parser.parse_args()
     
@@ -228,5 +244,6 @@ if __name__ == "__main__":
         device=args.device,
         checkpoint_dir=args.checkpoint_dir,
         seed=args.seed,
+        use_virtual_sensors=not args.no_virtual_sensors,
     )
 

@@ -80,10 +80,10 @@ def arduino_stop():
 
 @arduino_bp.get("/logs")
 def arduino_logs_index():
-    """List available daily log files in sensor_logs/."""
+    """List available daily JSON log files in sensor_logs/."""
     files = []
     if _SENSOR_LOGS_DIR.exists():
-        for f in sorted(_SENSOR_LOGS_DIR.glob("arduino_*.txt"), reverse=True):
+        for f in sorted(_SENSOR_LOGS_DIR.glob("arduino_*.jsonl"), reverse=True):
             stat = f.stat()
             files.append({
                 "filename": f.name,
@@ -95,12 +95,15 @@ def arduino_logs_index():
 
 @arduino_bp.get("/logs/latest")
 def arduino_logs_latest():
-    """Return the latest.txt snapshot as plain text."""
-    latest_file = _SENSOR_LOGS_DIR / "latest.txt"
+    """Return the latest.json snapshot as JSON."""
+    latest_file = _SENSOR_LOGS_DIR / "latest.json"
     if not latest_file.exists():
         return jsonify({"error": "No data yet — Arduino not connected or no readings saved"}), 404
-    content = latest_file.read_text(encoding="utf-8")
-    return Response(content, mimetype="text/plain")
+    try:
+        content = json.loads(latest_file.read_text(encoding="utf-8"))
+    except Exception:
+        return jsonify({"error": "latest.json is malformed"}), 500
+    return jsonify(content)
 
 
 @arduino_bp.get("/logs/<filename>")
@@ -108,7 +111,7 @@ def arduino_logs_file(filename: str):
     """Return last N lines of a daily log file.
     Query params: ?lines=100 (default 100).
     """
-    if not filename.endswith(".txt") or "/" in filename or "\\" in filename:
+    if not filename.endswith(".jsonl") or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
     log_file = _SENSOR_LOGS_DIR / filename
     if not log_file.exists():
@@ -121,9 +124,16 @@ def arduino_logs_file(filename: str):
     n = max(1, min(n, 5000))
     all_lines = log_file.read_text(encoding="utf-8").splitlines()
     tail = all_lines[-n:]
+    entries = []
+    for line in tail:
+        try:
+            entries.append(json.loads(line))
+        except Exception:
+            continue
     return jsonify({
         "filename": filename,
         "total_lines": len(all_lines),
         "returned_lines": len(tail),
         "lines": tail,
+        "entries": entries,
     })

@@ -43,6 +43,7 @@ def train_energy_management(
     eval_freq: int = 50_000,
     save_freq: int = 100_000,
     seed: int = 42,
+    use_virtual_sensors: bool = True,
 ):
     """
     Train energy management agent using PPO.
@@ -74,6 +75,8 @@ def train_energy_management(
     env_config = EnvConfig(
         num_debris=30,
         max_episode_steps=5000,
+        use_virtual_sensors=use_virtual_sensors,
+        virtual_sensor_seed=seed,
     )
     
     # Create environments
@@ -142,6 +145,8 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint-dir", type=str, default="checkpoints/energy_management")
     parser.add_argument("--log-dir", type=str, default="logs/energy_management")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-virtual-sensors", action="store_true",
+                        help="Disable virtual sensors (use legacy 44-dim obs)")
     
     args = parser.parse_args()
     
@@ -153,5 +158,6 @@ if __name__ == "__main__":
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
         seed=args.seed,
+        use_virtual_sensors=not args.no_virtual_sensors,
     )
 

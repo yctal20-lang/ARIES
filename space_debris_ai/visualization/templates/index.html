@@ -56,8 +56,8 @@
         </div>
         <div class="top-bar-right">
             <span class="battery-label">BAT</span>
-            <div class="battery-bar"><div id="battery-fill" class="battery-fill" style="width:89%"></div></div>
-            <span id="battery-pct" class="battery-pct">89%</span>
+            <div class="battery-bar"><div id="battery-fill" class="battery-fill" style="width:100%"></div></div>
+            <span id="battery-pct" class="battery-pct">100%</span>
         </div>
     </header>
 
@@ -91,6 +91,23 @@
                     <div class="env-cell"><span>HUMIDITY</span><span id="env-hum">-1%</span></div>
                 </div>
             </div>
+            <div class="glass-panel virtual-telemetry-panel" id="virtual-telemetry-panel">
+                <div class="panel-label">
+                    Virtual sensors (SIM)
+                    <span class="ard-sensor-dot vt-live-dot" id="vt-live-dot" title="Background simulation stream"></span>
+                </div>
+                <div class="vt-meta" id="vt-meta">Waiting for stream…</div>
+                <div class="env-grid vt-grid">
+                    <div class="env-cell"><span>GPS</span><span id="vt-gps">—</span></div>
+                    <div class="env-cell"><span>Battery SOC</span><span id="vt-soc">—</span></div>
+                    <div class="env-cell"><span>Solar gen</span><span id="vt-solar">—</span></div>
+                    <div class="env-cell"><span>Eclipse</span><span id="vt-eclipse">—</span></div>
+                    <div class="env-cell"><span>Dose rate</span><span id="vt-dose">—</span></div>
+                    <div class="env-cell"><span>Radar tgts</span><span id="vt-radar">—</span></div>
+                    <div class="env-cell"><span>Proximity</span><span id="vt-prox">—</span></div>
+                    <div class="env-cell"><span>Mean temp</span><span id="vt-thermal">—</span></div>
+                </div>
+            </div>
         </aside>
 
         <!-- Center column -->
@@ -121,7 +138,12 @@
                                 <span class="ard-sensor-label">ARDUINO LIVE</span>
                                 <span class="ard-sensor-dot" id="ard-live-dot"></span>
                             </div>
-                            Distance: <span id="orbit-popup-distance">—</span>
+                            <div class="orbit-popup-ultrasonic-wrap">
+                                <div class="orbit-popup-distance-row">
+                                    <span class="orbit-popup-distance-label">Distance</span>
+                                    <span id="orbit-popup-ultrasonic" class="orbit-popup-ultrasonic-value">—</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -166,19 +188,6 @@
                     <div class="danger-stat">
                         <span>Proximity:</span>
                         <span id="danger-proximity" class="danger-stat-value">Safe</span>
-                    </div>
-                </div>
-            </div>
-            <div class="glass-panel ship-status-panel" id="ship-status-panel">
-                <div class="panel-label">Satellite Status <span class="ard-sensor-dot" id="ship-status-dot"></span></div>
-                <div class="ship-status-grid">
-                    <div class="ship-status-item">
-                        <span class="ship-status-label">Magnetic field</span>
-                        <span class="ship-status-value" id="ship-status-magnetic">—</span>
-                    </div>
-                    <div class="ship-status-item">
-                        <span class="ship-status-label">Temperature</span>
-                        <span class="ship-status-value" id="ship-status-temp">—</span>
                     </div>
                 </div>
             </div>
@@ -260,6 +269,7 @@
         <span>Autonomous Research & Intelligence Earth Satellite</span>
         <span>·</span>
         <span id="sys-status">SYS NOMINAL</span>
+        <span id="vt-footer-pill" class="vt-footer-pill"> · SIM: <span id="vt-footer-text">connecting…</span></span>
         <span id="current-seed" style="display: none;"> · Seed: <span id="seed-value">—</span></span>
         <span id="warnings-count" style="display: none;">·</span>
         <span id="warnings-text" style="display: none;">WARNINGS: <span id="warnings-num">0</span></span>
@@ -283,6 +293,29 @@
         </div>
     </div>
 
+    <script>
+    // #region agent log
+    (function () {
+        function dbg(msg, data, hypothesisId) {
+            fetch('http://127.0.0.1:7369/ingest/c03c92ff-9516-4b93-9c98-35857e7435f1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'937bb1'},body:JSON.stringify({sessionId:'937bb1',runId:'start-btn-issue-inline',hypothesisId:hypothesisId||'H5',location:'index.html:inline',message:msg,data:data||{},timestamp:Date.now()})}).catch(function(){});
+        }
+        dbg('inline_script_loaded', { readyState: document.readyState }, 'H5');
+        function bindStartProbe() {
+            var startBtn = document.getElementById('cover-start-btn');
+            dbg('inline_bind_probe', { hasStartBtn: !!startBtn }, 'H1');
+            if (!startBtn) return;
+            startBtn.addEventListener('click', function () {
+                dbg('inline_start_clicked', { text: startBtn.textContent, disabled: !!startBtn.disabled }, 'H2');
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindStartProbe);
+        } else {
+            bindStartProbe();
+        }
+    })();
+    // #endregion
+    </script>
     <script src="{{ url_for('static', filename='js/dashboard.js', v=static_v) }}"></script>
 </body>
 </html>

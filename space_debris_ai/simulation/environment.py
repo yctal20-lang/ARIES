@@ -18,6 +18,19 @@ from .physics import (
     MU_EARTH,
 )
 
+# Lazy-imported to avoid circular dependency (sensors -> simulation.physics)
+_VirtualSensorHub = None
+_TELEMETRY_DIM: Optional[int] = None
+
+
+def _get_sensor_hub_class():
+    global _VirtualSensorHub, _TELEMETRY_DIM
+    if _VirtualSensorHub is None:
+        from ..sensors.virtual.hub import VirtualSensorHub, TELEMETRY_DIM
+        _VirtualSensorHub = VirtualSensorHub
+        _TELEMETRY_DIM = TELEMETRY_DIM
+    return _VirtualSensorHub, _TELEMETRY_DIM
+
 
 @dataclass
 class EnvConfig:
@@ -48,6 +61,10 @@ class EnvConfig:
     fuel_penalty: float = -0.01
     proximity_reward: float = 1.0
     safety_bonus: float = 0.1
+
+    # Virtual sensors
+    use_virtual_sensors: bool = False
+    virtual_sensor_seed: Optional[int] = None
 
 
 class OrbitalEnv(gym.Env):
@@ -105,14 +122,28 @@ class OrbitalEnv(gym.Env):
         self.captured_debris: List[str] = []
         self.step_count: int = 0
         self.total_fuel_used: float = 0.0
-        
+        self._last_thrust_mag: float = 0.0
+
+        # Virtual sensor hub
+        self.use_virtual_sensors = self.config.use_virtual_sensors
+        self.sensor_hub = None
+        if self.use_virtual_sensors:
+            HubClass, _ = _get_sensor_hub_class()
+            self.sensor_hub = HubClass(seed=self.config.virtual_sensor_seed)
+        self._last_sensor_data: Dict[str, Any] = {}
+
         # Define observation space
-        # [spacecraft_pos(3), spacecraft_vel(3), attitude(4), angular_vel(3),
-        #  fuel(1), nearest_debris_rel_pos(3*5), nearest_debris_rel_vel(3*5)]
-        obs_dim = 3 + 3 + 4 + 3 + 1 + 15 + 15  # = 44
+        if self.use_virtual_sensors:
+            _, telem_dim = _get_sensor_hub_class()
+            obs_dim = telem_dim
+        else:
+            # Legacy: [spacecraft_pos(3), spacecraft_vel(3), attitude(4),
+            #  angular_vel(3), fuel(1), nearest_debris(5*6)]
+            obs_dim = 3 + 3 + 4 + 3 + 1 + 15 + 15  # = 44
+        obs_bound = 10.0 if self.use_virtual_sensors else 1e6
         self.observation_space = spaces.Box(
-            low=-np.inf,
-            high=np.inf,
+            low=-obs_bound,
+            high=obs_bound,
             shape=(obs_dim,),
             dtype=np.float32,
         )
@@ -211,7 +242,9 @@ class OrbitalEnv(gym.Env):
         thrust_cmd = action[:3] * self.config.max_thrust
         torque_cmd = action[3:6] * self.config.max_torque
         gripper_cmd = action[6]
-        
+
+        self._last_thrust_mag = float(np.linalg.norm(thrust_cmd))
+
         # Store previous fuel
         prev_fuel = self.spacecraft.fuel_mass
         
@@ -222,7 +255,14 @@ class OrbitalEnv(gym.Env):
             torque_cmd,
             self.config.dt,
         )
-        
+
+        # Detect divergent state — terminate episode early
+        if not (np.all(np.isfinite(self.spacecraft.position))
+                and np.all(np.isfinite(self.spacecraft.velocity))):
+            observation = np.zeros(self.observation_space.shape, dtype=np.float32)
+            self.step_count += 1
+            return observation, self.config.collision_penalty, True, False, self._get_info()
+
         # Update debris positions
         for debris in self.debris_objects:
             debris.propagate(self.config.dt, self.mechanics)
@@ -343,16 +383,20 @@ class OrbitalEnv(gym.Env):
     
     def _get_observation(self) -> np.ndarray:
         """Construct observation vector."""
+        if self.use_virtual_sensors and self.sensor_hub is not None:
+            return self._get_virtual_sensor_observation()
+        return self._get_legacy_observation()
+
+    def _get_legacy_observation(self) -> np.ndarray:
+        """Original 44-dim observation (backward compatible)."""
         obs = []
-        
-        # Spacecraft state (normalized)
-        obs.extend(self.spacecraft.position / 1000)  # Scale down
-        obs.extend(self.spacecraft.velocity * 100)   # Scale up
+
+        obs.extend(self.spacecraft.position / 1000)
+        obs.extend(self.spacecraft.velocity * 100)
         obs.extend(self.spacecraft.attitude)
         obs.extend(self.spacecraft.angular_velocity)
-        obs.append(self.spacecraft.fuel_mass / self.config.fuel_mass)  # Normalized fuel
+        obs.append(self.spacecraft.fuel_mass / self.config.fuel_mass)
         
-        # Nearest 5 debris objects (relative position and velocity)
         debris_rel_data = []
         for debris in self.debris_objects:
             rel_pos = debris.position - self.spacecraft.position
@@ -360,7 +404,6 @@ class OrbitalEnv(gym.Env):
             dist = np.linalg.norm(rel_pos)
             debris_rel_data.append((dist, rel_pos, rel_vel))
         
-        # Sort by distance and take nearest 5
         debris_rel_data.sort(key=lambda x: x[0])
         
         for i in range(5):
@@ -369,14 +412,35 @@ class OrbitalEnv(gym.Env):
                 obs.extend(rel_pos)
                 obs.extend(rel_vel)
             else:
-                # Pad with zeros if fewer than 5 debris
                 obs.extend([0.0] * 6)
         
         return np.array(obs, dtype=np.float32)
+
+    def _get_virtual_sensor_observation(self) -> np.ndarray:
+        """Observation built from the full virtual sensor suite."""
+        debris_pos = [d.position for d in self.debris_objects]
+        debris_vel = [d.velocity for d in self.debris_objects]
+        debris_sizes = [d.size for d in self.debris_objects]
+        debris_types = [d.debris_type for d in self.debris_objects]
+
+        sensor_data = self.sensor_hub.read_all(
+            spacecraft_position=self.spacecraft.position,
+            spacecraft_velocity=self.spacecraft.velocity,
+            spacecraft_attitude=self.spacecraft.attitude,
+            spacecraft_angular_velocity=self.spacecraft.angular_velocity,
+            debris_positions=debris_pos,
+            debris_velocities=debris_vel,
+            debris_sizes=debris_sizes,
+            debris_types=debris_types,
+            thrust_magnitude=self._last_thrust_mag,
+            timestamp=self.spacecraft.time,
+        )
+        self._last_sensor_data = sensor_data
+        return sensor_data["telemetry_vector"]
     
     def _get_info(self) -> Dict[str, Any]:
         """Get info dictionary."""
-        return {
+        info: Dict[str, Any] = {
             "step": self.step_count,
             "altitude": self.spacecraft.altitude,
             "speed": self.spacecraft.speed,
@@ -386,6 +450,9 @@ class OrbitalEnv(gym.Env):
             "debris_captured": len(self.captured_debris),
             "min_debris_distance": self._get_min_debris_distance(),
         }
+        if self._last_sensor_data:
+            info["sensor_data"] = self._last_sensor_data
+        return info
     
     def _get_min_debris_distance(self) -> float:
         """Get distance to nearest debris."""

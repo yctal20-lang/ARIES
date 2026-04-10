@@ -45,7 +45,10 @@ class OrbitalElements:
         """Convert state vector (position, velocity) to orbital elements."""
         r_mag = np.linalg.norm(r)
         v_mag = np.linalg.norm(v)
-        
+
+        if not (np.isfinite(r_mag) and np.isfinite(v_mag) and r_mag > 1.0):
+            return cls(a=7000.0, e=0.0, i=0.0, raan=0.0, omega=0.0, nu=0.0)
+
         # Specific angular momentum
         h = np.cross(r, v)
         h_mag = np.linalg.norm(h)
@@ -176,8 +179,11 @@ class SpacecraftState:
         self.attitude = np.asarray(self.attitude, dtype=np.float64)
         self.angular_velocity = np.asarray(self.angular_velocity, dtype=np.float64)
         
-        # Normalize quaternion
-        self.attitude = self.attitude / np.linalg.norm(self.attitude)
+        q_norm = np.linalg.norm(self.attitude)
+        if np.isfinite(q_norm) and q_norm > 1e-10:
+            self.attitude = self.attitude / q_norm
+        else:
+            self.attitude = np.array([1.0, 0.0, 0.0, 0.0])
     
     @property
     def orbital_elements(self) -> OrbitalElements:
@@ -245,6 +251,10 @@ class OrbitalMechanics:
             Acceleration vector (km/s²)
         """
         r_mag = np.linalg.norm(r)
+
+        if not np.isfinite(r_mag) or r_mag < 1.0:
+            return np.zeros(3)
+
         a_grav = -self.mu * r / r_mag**3
         
         if self.include_j2:
@@ -368,13 +378,14 @@ class OrbitalMechanics:
             New spacecraft state
         """
         def state_derivative(r, v, mass):
+            if not (np.all(np.isfinite(r)) and np.all(np.isfinite(v))):
+                return np.zeros(3), np.zeros(3)
             a = self.gravitational_acceleration(r)
             a += self.atmospheric_drag(r, v, area, mass)
             
             if thrust is not None and state.fuel_mass > 0:
-                # Convert thrust from body to inertial frame
                 R = self._quaternion_to_matrix(state.attitude)
-                thrust_inertial = R @ thrust / 1000  # Convert N to kN
+                thrust_inertial = R @ thrust / 1000
                 a += thrust_inertial / mass
             
             return v, a
@@ -390,6 +401,14 @@ class OrbitalMechanics:
         
         new_r = r + dt/6 * (k1_r + 2*k2_r + 2*k3_r + k4_r)
         new_v = v + dt/6 * (k1_v + 2*k2_v + 2*k3_v + k4_v)
+
+        r_mag_new = np.linalg.norm(new_r)
+        v_mag_new = np.linalg.norm(new_v)
+        if not (np.isfinite(r_mag_new) and np.isfinite(v_mag_new)
+                and r_mag_new > EARTH_RADIUS and r_mag_new < 1e6
+                and v_mag_new < 100.0):
+            new_r = r.copy()
+            new_v = v.copy()
         
         # Update fuel consumption (if thrusting)
         new_fuel = state.fuel_mass
@@ -435,13 +454,19 @@ class OrbitalMechanics:
         dt: float,
     ) -> np.ndarray:
         """Propagate quaternion given angular velocity."""
-        # Quaternion derivative: q_dot = 0.5 * q * omega_quat
+        if not (np.all(np.isfinite(q)) and np.all(np.isfinite(omega))):
+            return np.array([1.0, 0.0, 0.0, 0.0])
+
         omega_mag = np.linalg.norm(omega)
         
         if omega_mag < 1e-10:
             return q
-        
-        # Rodrigues formula for quaternion
+
+        MAX_OMEGA = 10.0  # rad/s physical sanity limit
+        if omega_mag > MAX_OMEGA:
+            omega = omega * (MAX_OMEGA / omega_mag)
+            omega_mag = MAX_OMEGA
+
         half_angle = 0.5 * omega_mag * dt
         axis = omega / omega_mag
         
@@ -452,9 +477,11 @@ class OrbitalMechanics:
             axis[2] * np.sin(half_angle)
         ])
         
-        # Quaternion multiplication
         new_q = self._quaternion_multiply(q, dq)
-        return new_q / np.linalg.norm(new_q)
+        q_norm = np.linalg.norm(new_q)
+        if not np.isfinite(q_norm) or q_norm < 1e-10:
+            return np.array([1.0, 0.0, 0.0, 0.0])
+        return new_q / q_norm
     
     def _quaternion_multiply(self, q1: np.ndarray, q2: np.ndarray) -> np.ndarray:
         """Multiply two quaternions."""
@@ -530,11 +557,11 @@ class SpacecraftDynamics:
         )
         
         # Update angular velocity (Euler's equation)
-        omega = state.angular_velocity
+        omega = np.clip(state.angular_velocity, -10.0, 10.0)
         omega_dot = self.inertia_inv @ (
             torque - np.cross(omega, self.inertia @ omega)
         )
-        new_omega = omega + omega_dot * dt
+        new_omega = np.clip(omega + omega_dot * dt, -10.0, 10.0)
         
         new_state.angular_velocity = new_omega
         
@@ -587,8 +614,11 @@ class DebrisObject:
     def propagate(self, dt: float, mechanics: OrbitalMechanics) -> None:
         """Propagate debris state."""
         a = mechanics.gravitational_acceleration(self.position)
-        self.velocity += a * dt
-        self.position += self.velocity * dt
+        new_vel = self.velocity + a * dt
+        new_pos = self.position + new_vel * dt
+        if np.all(np.isfinite(new_pos)) and np.all(np.isfinite(new_vel)):
+            self.velocity = new_vel
+            self.position = new_pos
     
     @property
     def altitude(self) -> float:

@@ -674,6 +674,7 @@ body {
     stroke-dasharray: 245;
     stroke-dashoffset: 245;
     transition: stroke-dashoffset 0.5s ease;
+    filter: drop-shadow(0 0 4px rgba(255, 80, 80, 0.5));
 }
 
 .gauge-value {
@@ -735,6 +736,26 @@ body {
 
 .env-cell span:last-child {
     color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Virtual telemetry (background sim SSE) */
+.virtual-telemetry-panel .vt-meta {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    margin-bottom: 0.45rem;
+    font-variant-numeric: tabular-nums;
+}
+.virtual-telemetry-panel .vt-live-dot {
+    margin-left: 0.35rem;
+    vertical-align: middle;
+}
+.vt-footer-pill {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+.vt-footer-pill #vt-footer-text {
+    color: var(--neon-cyan);
     font-variant-numeric: tabular-nums;
 }
 
@@ -835,37 +856,6 @@ body {
     border-radius: 50%;
     image-rendering: crisp-edges;
     image-rendering: -webkit-optimize-contrast;
-}
-
-/* Ship status panel (Arduino sensors) */
-.ship-status-panel {
-    padding: 0.75rem 1rem;
-}
-.ship-status-panel .panel-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.ship-status-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-top: 0.5rem;
-}
-.ship-status-item {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-}
-.ship-status-label {
-    color: var(--text-muted);
-}
-.ship-status-value {
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
-    color: var(--text-primary);
 }
 
 /* System health */
@@ -1516,6 +1506,42 @@ body {
     border-radius: 50%;
     background: #64748b;
     transition: background 0.3s, box-shadow 0.3s;
+}
+
+.orbit-popup-ultrasonic-wrap {
+    margin-top: 0.15rem;
+    line-height: 1.35;
+}
+.orbit-popup-distance-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.5rem;
+}
+.orbit-popup-distance-label {
+    font-size: 0.62rem;
+    font-family: "Courier New", monospace;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    color: rgba(0, 212, 255, 0.85);
+    flex-shrink: 0;
+}
+.ard-sensor-sublabel {
+    display: block;
+    font-size: 0.55rem;
+    font-family: "Courier New", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(0, 212, 255, 0.78);
+    margin-bottom: 0.12rem;
+}
+.orbit-popup-ultrasonic-value {
+    display: inline;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(226, 232, 240, 0.95);
+    word-break: break-word;
+    min-width: 2ch;
 }
 
 /* ── Sensor Log Panel ─────────────────────────────── */

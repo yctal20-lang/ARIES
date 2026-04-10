@@ -6,18 +6,20 @@ Typical Serial block (every ~200 ms):
     MAGNETIC: DETECTED | MAGNETIC: CLEAR
     (legacy) Magnetic field detected | Clear space — выставляет и hall, и magnetic
     Distance to object: 144.0 km
+    Distance: 45.2 cm   |   Ultrasonic: 12.0 cm   (HC-SR04, поле distance_cm)
     Temperature: 24.5 °C
     Vibration detected! | No vibration
     ---------------
 
 Also supports combined Temperature + Humidity on one line (legacy sketch).
-Each parsed block is written to a TXT log directory (daily rolling + latest snapshot):
-    <this_dir>/arduino_YYYY-MM-DD.txt  — daily rolling log
-    <this_dir>/latest.txt              — latest reading snapshot
+Each parsed block is written to JSON logs (daily rolling + latest snapshot):
+    <this_dir>/arduino_YYYY-MM-DD.jsonl  — daily rolling NDJSON log
+    <this_dir>/latest.json               — latest reading snapshot
 """
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import re
@@ -40,6 +42,7 @@ _SENSOR_LOGS_DIR.mkdir(parents=True, exist_ok=True)
 _lock = threading.Lock()
 _latest: Dict[str, Any] = {
     "distance_km": None,
+    "distance_cm": None,
     "magnetic": None,
     "hall": None,
     "temperature": None,
@@ -55,6 +58,12 @@ _reader_thread: Optional[threading.Thread] = None
 _stop_event = threading.Event()
 
 _RE_DISTANCE = re.compile(r"Distance to object\s*:\s*([\d.]+)\s*km", re.IGNORECASE)
+# HC-SR04 и аналоги обычно печатают сантиметры
+_RE_DISTANCE_CM = re.compile(
+    r"(?:Distance to object|Distance|Ultrasonic|HC-SR04)\s*:\s*([\d.]+)\s*cm\b",
+    re.IGNORECASE,
+)
+_RE_DISTANCE_CM_LOOSE = re.compile(r"\b([\d.]+)\s*cm\b", re.IGNORECASE)
 _RE_TEMP_HUM = re.compile(
     r"Temperature:\s*([\d.]+)\s*°?\s*C.*Humidity:\s*([\d.]+)\s*%", re.IGNORECASE
 )
@@ -119,6 +128,8 @@ def _find_arduino_port() -> Optional[str]:
     # Pass 2: probe by reading a couple lines
     probe_substrings = (
         "distance to object",
+        " cm",
+        "ultrasonic",
         "magnetic field",
         "magnetic:",
         "hall:",
@@ -177,45 +188,40 @@ def get_baud() -> int:
 
 
 def _write_sensor_log(snapshot: Dict[str, Any]) -> None:
-    """Append one reading to the daily log and overwrite latest.txt."""
+    """Append one reading to a daily JSONL log and overwrite latest.json."""
     try:
         ts = datetime.fromtimestamp(snapshot["updated_at"])
         ts_str = ts.strftime("%Y-%m-%d %H:%M:%S")
         date_str = ts.strftime("%Y-%m-%d")
 
         dist = snapshot.get("distance_km")
+        dist_cm = snapshot.get("distance_cm")
         mag = snapshot.get("magnetic")
         hall = snapshot.get("hall")
         temp = snapshot.get("temperature")
         hum = snapshot.get("humidity")
         vib = snapshot.get("vibration")
 
-        dist_s = f"{dist:.1f} km" if dist is not None else "—"
-        mag_s = ("DETECTED" if mag else "clear") if mag is not None else "—"
-        hall_s = ("DETECTED" if hall else "clear") if hall is not None else "—"
-        temp_s = f"{temp:.1f} °C" if temp is not None else "—"
-        hum_s = f"{hum:.1f} %" if hum is not None else "—"
-        vib_s = ("YES" if vib else "no") if vib is not None else "—"
+        payload = {
+            "timestamp": ts_str,
+            "distance_km": dist,
+            "distance_cm": dist_cm,
+            "magnetic": mag,
+            "hall": hall,
+            "temperature_c": temp,
+            "humidity_pct": hum,
+            "vibration": vib,
+            "seq": snapshot.get("seq"),
+            "updated_at": snapshot.get("updated_at"),
+        }
 
-        line = (
-            f"[{ts_str}] "
-            f"dist={dist_s} | mag={mag_s} | hall={hall_s} | temp={temp_s} | "
-            f"hum={hum_s} | vib={vib_s}\n"
-        )
-
-        daily_file = _SENSOR_LOGS_DIR / f"arduino_{date_str}.txt"
+        daily_file = _SENSOR_LOGS_DIR / f"arduino_{date_str}.jsonl"
         with open(daily_file, "a", encoding="utf-8") as f:
-            f.write(line)
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
-        latest_file = _SENSOR_LOGS_DIR / "latest.txt"
+        latest_file = _SENSOR_LOGS_DIR / "latest.json"
         with open(latest_file, "w", encoding="utf-8") as f:
-            f.write(f"Timestamp : {ts_str}\n")
-            f.write(f"Distance  : {dist_s}\n")
-            f.write(f"Magnetic  : {mag_s}\n")
-            f.write(f"Hall      : {hall_s}\n")
-            f.write(f"Temp      : {temp_s}\n")
-            f.write(f"Humidity  : {hum_s}\n")
-            f.write(f"Vibration : {vib_s}\n")
+            f.write(json.dumps(payload, ensure_ascii=False, indent=2))
     except Exception:
         pass
 
@@ -257,6 +263,14 @@ def _parse_block(lines: list[str]) -> None:
         if m:
             with _lock:
                 _latest["distance_km"] = float(m.group(1))
+            continue
+
+        m = _RE_DISTANCE_CM.search(stripped)
+        if not m:
+            m = _RE_DISTANCE_CM_LOOSE.search(stripped)
+        if m:
+            with _lock:
+                _latest["distance_cm"] = float(m.group(1))
             continue
 
         m = _RE_TEMP_HUM.search(stripped)

@@ -78,9 +78,38 @@ var _orbitPopupSimDistanceKm = null;
 var _popupArduinoIntervalId = null;
 /** Попап «мусор» открыт — обновлять ARDUINO LIVE по SSE/fetch без проверки style.display */
 var _orbitPopupArduinoOpen = false;
+var _popupArduinoLogPollTick = 0;
 const ORBIT_SHIP_FPS = 5; // update ship at 5fps when not dragging; paused while user rotates
 // Отложенный рендер орбиты: пока пользователь держит мышь на сфере — не обновляем; после отпускания — один раз отрисуем
 var orbitChartDeferredRender = false;
+
+/** Симуляция SOC: 100% → 90% со скоростью 1 процент в минуту (затем удержание на 90%). */
+var _simBatteryStartMs = Date.now();
+var _simBatteryIntervalId = null;
+
+function getSimulatedBatteryPercent() {
+    var minutes = (Date.now() - _simBatteryStartMs) / 60000;
+    var pct = 100 - minutes;
+    if (pct < 90) pct = 90;
+    if (pct > 100) pct = 100;
+    return pct;
+}
+
+function formatBatteryDisplayPct(p) {
+    var s = p.toFixed(1);
+    return s.endsWith('.0') ? Math.round(p) + '%' : s + '%';
+}
+
+function applySimulatedBatteryUI() {
+    var pct = getSimulatedBatteryPercent();
+    var w = Math.min(100, Math.max(0, pct));
+    var batFill = document.getElementById('battery-fill');
+    var batPct = document.getElementById('battery-pct');
+    var vtSoc = document.getElementById('vt-soc');
+    if (batFill) batFill.style.width = w + '%';
+    if (batPct) batPct.textContent = formatBatteryDisplayPct(pct);
+    if (vtSoc) vtSoc.textContent = pct.toFixed(1) + '%';
+}
 
 function scheduleOrbitChartRender(data) {
     if (orbitChartUserDragging) {
@@ -241,8 +270,14 @@ function startStreamRefresh() {
 
 /** Fetch mission data with the given seed and render the dashboard. */
 async function loadMissionData(seed) {
+    // #region agent log
+    debugLog937bb1('dashboard.js:loadMissionData:entry', 'loadMissionData called', { seed: seed }, 'start-btn-issue', 'H3');
+    // #endregion
     const url = '/api/mission-data' + (seed != null ? '?seed=' + encodeURIComponent(seed) : '');
     const response = await fetch(url);
+    // #region agent log
+    debugLog937bb1('dashboard.js:loadMissionData:response', 'loadMissionData fetch response', { ok: response.ok, status: response.status, url: url }, 'start-btn-issue', 'H4');
+    // #endregion
     if (!response.ok) throw new Error('Mission data request failed');
     const data = await response.json();
     lastMissionData = data;
@@ -273,12 +308,24 @@ async function loadMissionData(seed) {
     await fetchArduinoLive();
     updateDangerWarnings(data);
 
+    if (data.virtual_sensors && typeof data.virtual_sensors === 'object') {
+        var speedsM = data.speeds || [];
+        var speedKmhM = speedsM.length ? speedsM[speedsM.length - 1] * 3600 : null;
+        var altM = (data.spacecraft_status || {}).altitude;
+        _virtualSensorsLive = Object.assign({}, data.virtual_sensors, {
+            _meta: { seq: null, sim_time: null, seed: data.seed, from_mission: true },
+            _motion: speedKmhM != null ? { speed_kmh: speedKmhM, altitude_km: altM != null ? altM : null } : undefined,
+        });
+        updateVirtualSensorsUI(_virtualSensorsLive);
+    }
+
     if (data.seed != null) {
         const seedEl = document.getElementById('seed-value');
         const blockEl = document.getElementById('current-seed');
         if (seedEl) seedEl.textContent = data.seed;
         if (blockEl) blockEl.style.display = 'inline';
     }
+    if (_orbitPopupArduinoOpen) updatePopupWithArduino();
     return data;
 }
 
@@ -293,17 +340,28 @@ function startLiveTime() {
     setInterval(tick, 1000);
 }
 
+/** Orbital speed (km/h) + altitude (km) for the Velocity gauge and ALT readout. */
+function applyVelocityPanel(speedKmh, altitudeKm) {
+    if (speedKmh == null || typeof speedKmh !== 'number' || isNaN(speedKmh)) return;
+    var gaugeValue = document.getElementById('gauge-value');
+    var gaugeArc = document.getElementById('gauge-arc');
+    if (gaugeValue) gaugeValue.textContent = speedKmh.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    if (gaugeArc) {
+        var maxKmh = 40000;
+        var ratio = Math.min(1, Math.max(0, speedKmh / maxKmh));
+        gaugeArc.style.strokeDashoffset = String(245 * (1 - ratio));
+    }
+    var altEl = document.getElementById('readout-alt');
+    if (altEl && altitudeKm != null && typeof altitudeKm === 'number' && !isNaN(altitudeKm)) {
+        altEl.textContent = altitudeKm.toFixed(1) + ' km';
+    }
+}
+
 function updateVelocityGauge(data) {
     const speeds = data.speeds || [];
     const speedKmh = speeds.length ? speeds[speeds.length - 1] * 3600 : 0;
-    const gaugeValue = document.getElementById('gauge-value');
-    const gaugeArc = document.getElementById('gauge-arc');
-    if (gaugeValue) gaugeValue.textContent = speedKmh.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    if (gaugeArc) {
-        const maxKmh = 40000;
-        const ratio = Math.min(1, speedKmh / maxKmh);
-        gaugeArc.style.strokeDashoffset = 245 * (1 - ratio);
-    }
+    const s = data.spacecraft_status || {};
+    applyVelocityPanel(speedKmh, s.altitude != null ? s.altitude : null);
 }
 
 function updateReadouts(data) {
@@ -563,15 +621,9 @@ function updateThreatCount(data) {
 }
 
 function updateBatteryShields(data) {
-    const fuels = data.fuels || [];
     const conf = data.confidences || [];
-    const fuelPct = fuels.length && fuels[0] ? (fuels[fuels.length - 1] / fuels[0]) * 100 : 89;
     const shieldPct = conf.length ? Math.round(conf[conf.length - 1] * 47 + 50) : 47;
-    const batFill = document.getElementById('battery-fill');
-    const batPct = document.getElementById('battery-pct');
     const shieldEl = document.getElementById('shields-pct');
-    if (batFill) batFill.style.width = Math.min(100, fuelPct) + '%';
-    if (batPct) batPct.textContent = Math.round(fuelPct) + '%';
     if (shieldEl) shieldEl.textContent = Math.min(100, shieldPct);
 }
 
@@ -1021,11 +1073,11 @@ function updateDangerStatus(data) {
     var proxEl = document.getElementById('danger-proximity');
     if (proxEl) {
         if (closestDistKm != null) {
-            proxEl.textContent = proximityWarn ? closestDistKm.toFixed(1) + ' km — DANGER' : closestDistKm.toFixed(1) + ' km — Safe';
+            proxEl.textContent = proximityWarn ? 'Not' : 'Safe';
             proxEl.style.color = proximityWarn ? '#ff4444' : COLORS.green;
         } else {
-            proxEl.textContent = '—';
-            proxEl.style.color = '';
+            proxEl.textContent = 'Safe';
+            proxEl.style.color = COLORS.green;
         }
     }
 
@@ -1247,6 +1299,7 @@ function updateDangerWarnings(data) {
 // ── Arduino live sensor data (SSE push + fetch fallback) ───────────────────
 var _arduinoLive = {
     distance_km: null,
+    distance_cm: null,
     magnetic: null,
     hall: null,
     temperature: null,
@@ -1264,11 +1317,32 @@ var HALL_MAG_EVENTS_MAX = 40;
 var _arduinoAnomaliesSuppressed = false;
 var _arduinoPollingId = null;
 var _arduinoEventSource = null;
+/** Последний снимок из /api/arduino/logs/latest — те же поля distance_*, что в таблице лога */
+var _arduinoLatestLogSnapshot = null;
+/** Фоновая симуляция: последний кадр с /api/virtual-sensors/stream */
+var _virtualSensorsLive = null;
+var _virtualSensorsEventSource = null;
+
+function debugLog937bb1(location, message, data, runId, hypothesisId) {
+    // #region agent log
+    fetch('http://127.0.0.1:7369/ingest/c03c92ff-9516-4b93-9c98-35857e7435f1',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'937bb1'},body:JSON.stringify({sessionId:'937bb1',runId:runId||'start-btn-issue',hypothesisId:hypothesisId||'HX',location:location,message:message,data:data||{},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+}
 
 function arduinoLiveNum(v) {
     if (v == null || v === '') return null;
     var n = typeof v === 'number' ? v : Number(v);
     return isNaN(n) ? null : n;
+}
+
+/** Как колонка Distance в ARDUINO SENSOR LOG: см приоритетнее км (строка без суффикса «Arduino»). */
+function formatArduinoUltrasonicReading(obj) {
+    if (!obj || typeof obj !== 'object') return null;
+    var cm = arduinoLiveNum(obj.distance_cm);
+    if (cm != null) return cm.toFixed(1) + ' cm';
+    var km = arduinoLiveNum(obj.distance_km);
+    if (km != null) return km.toFixed(1) + ' km';
+    return null;
 }
 
 /** Датчик Arduino «включён» (true / 1 / "true" и т.п.) — для магнита и вибрации */
@@ -1355,7 +1429,6 @@ function applyArduinoLiveData(data) {
     if (_orbitPopupArduinoOpen) {
         updatePopupWithArduino();
     }
-    updateShipStatusPanel();
     updateDangerStatus(dangerWarningsDataContext());
 }
 
@@ -1393,6 +1466,163 @@ function stopArduinoPolling() {
     }
 }
 
+function _vtNum(v, fallback) {
+    if (v == null || v === '') return fallback != null ? fallback : null;
+    var n = typeof v === 'number' ? v : Number(v);
+    return isNaN(n) ? (fallback != null ? fallback : null) : n;
+}
+
+/** Push virtual sensor dict (from SSE or mission snapshot) into the SIM panel + shared readouts. */
+function updateVirtualSensorsUI(vs) {
+    if (!vs || typeof vs !== 'object') return;
+    var meta = vs._meta || {};
+    var foot = document.getElementById('vt-footer-text');
+    var metaEl = document.getElementById('vt-meta');
+    var simT = _vtNum(meta.sim_time, null);
+    if (meta.seq != null && foot) {
+        foot.textContent = '#' + meta.seq + '  t=' + (simT != null ? simT.toFixed(1) : '—') + 's';
+    } else if (foot) {
+        foot.textContent = 'snapshot';
+    }
+    if (metaEl) {
+        if (meta.seq != null) {
+            metaEl.textContent = 'Frame #' + meta.seq + ' · sim t=' + (simT != null ? simT.toFixed(2) : '—') + 's · seed ' + (meta.seed != null ? meta.seed : '—');
+        } else {
+            metaEl.textContent = 'Mission snapshot — live stream will override when connected';
+        }
+    }
+    var dot = document.getElementById('vt-live-dot');
+    if (dot) {
+        dot.style.background = '#22c55e';
+        dot.style.boxShadow = '0 0 6px #22c55e';
+    }
+
+    var motion = vs._motion;
+    if (motion) {
+        var sk = _vtNum(motion.speed_kmh, null);
+        var ak = _vtNum(motion.altitude_km, null);
+        if (sk != null) applyVelocityPanel(sk, ak);
+    }
+
+    var setTxt = function (id, text) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+
+    var gps = vs.gps;
+    if (gps) {
+        setTxt('vt-gps', gps.fix_valid ? (String(gps.num_satellites) + ' sats') : 'No fix');
+    } else {
+        setTxt('vt-gps', '—');
+    }
+
+    var pow = vs.power;
+    if (pow) {
+        var sp = _vtNum(pow.solar_power, null);
+        setTxt('vt-solar', sp != null ? sp.toFixed(0) + ' W' : '—');
+        setTxt('vt-eclipse', pow.eclipse_state ? 'Yes' : 'No');
+    }
+
+    var rad = vs.radiation;
+    if (rad) {
+        var dr = _vtNum(rad.dose_rate, null);
+        setTxt('vt-dose', dr != null ? dr.toFixed(3) + ' µSv/h' : '—');
+        var envRad = document.getElementById('env-rad');
+        if (envRad && dr != null) envRad.textContent = dr.toFixed(3) + ' µSv/h';
+        var pf = _vtNum(rad.particle_flux, null);
+        var envPart = document.getElementById('env-particle');
+        if (envPart && pf != null) envPart.textContent = pf.toFixed(0) + ' p/cm³';
+    }
+
+    var sun = vs.sun_sensor;
+    if (sun) {
+        var si = _vtNum(sun.intensity, null);
+        var envSolar = document.getElementById('env-solar');
+        if (envSolar && si != null) envSolar.textContent = si.toFixed(0) + ' W/m²';
+    }
+
+    var radar = vs.radar;
+    if (radar && radar.num_targets != null) {
+        setTxt('vt-radar', String(radar.num_targets));
+    } else {
+        setTxt('vt-radar', '—');
+    }
+
+    var prox = vs.proximity;
+    if (prox) {
+        if (prox.target_detected && _vtNum(prox.range_to_target, null) != null) {
+            setTxt('vt-prox', _vtNum(prox.range_to_target, 0).toFixed(2) + ' m');
+        } else {
+            setTxt('vt-prox', 'No target');
+        }
+    } else {
+        setTxt('vt-prox', '—');
+    }
+
+    var therm = vs.thermal;
+    if (therm) {
+        var mt = _vtNum(therm.mean_temperature, null);
+        setTxt('vt-thermal', mt != null ? mt.toFixed(1) + ' °C' : '—');
+        var envTemp = document.getElementById('env-temp');
+        if (envTemp && mt != null) envTemp.textContent = mt.toFixed(0) + ' °C';
+        var readoutTemp = document.getElementById('readout-temp');
+        if (readoutTemp && mt != null) readoutTemp.textContent = mt.toFixed(0) + ' °C';
+    }
+
+    var dangerProx = document.getElementById('danger-proximity');
+    if (dangerProx && vs.proximity) {
+        var pr = _vtNum(vs.proximity.range_to_target, null);
+        if (vs.proximity.target_detected && pr != null && pr < 15) {
+            dangerProx.textContent = 'Not';
+            dangerProx.style.color = '#ff4444';
+        } else {
+            dangerProx.textContent = 'Safe';
+            dangerProx.style.color = COLORS.green;
+        }
+    }
+
+    var accel = vs.accelerometer;
+    if (accel && accel.shock_detected) {
+        var dv = document.getElementById('danger-vibration');
+        if (dv) {
+            dv.textContent = 'Shock (sim)';
+            dv.style.color = '#ff5555';
+        }
+    }
+}
+
+function startVirtualSensorsStream() {
+    if (_virtualSensorsEventSource || typeof EventSource === 'undefined') return;
+    try {
+        _virtualSensorsEventSource = new EventSource('/api/virtual-sensors/stream');
+        _virtualSensorsEventSource.onopen = function () {
+            var foot = document.getElementById('vt-footer-text');
+            if (foot) foot.textContent = 'connected…';
+        };
+        _virtualSensorsEventSource.onmessage = function (ev) {
+            try {
+                var o = JSON.parse(ev.data);
+                if (o && typeof o === 'object') {
+                    _virtualSensorsLive = o;
+                    updateVirtualSensorsUI(o);
+                }
+            } catch (e) { /* ignore */ }
+            if (_orbitPopupArduinoOpen) updatePopupWithArduino();
+        };
+        _virtualSensorsEventSource.onerror = function () {
+            var foot = document.getElementById('vt-footer-text');
+            if (foot) foot.textContent = 'reconnecting…';
+            var dot = document.getElementById('vt-live-dot');
+            if (dot) {
+                dot.style.background = '#f97316';
+                dot.style.boxShadow = '0 0 6px #f97316';
+            }
+        };
+    } catch (e) {
+        _virtualSensorsEventSource = null;
+    }
+}
+
 function startArduinoAutoConnect() {
     var p = '';
     try {
@@ -1407,7 +1637,7 @@ function startArduinoAutoConnect() {
 }
 
 function updatePopupWithArduino() {
-    var distEl = document.getElementById('orbit-popup-distance');
+    var ultraEl = document.getElementById('orbit-popup-ultrasonic');
     var dotEl = document.getElementById('ard-live-dot');
     var d = _arduinoLive;
     var hasData = !!(d && d.updated_at != null);
@@ -1425,56 +1655,44 @@ function updatePopupWithArduino() {
         }
     }
 
-    if (distEl) {
-        var distKm = arduinoLiveNum(d.distance_km);
-        distEl.textContent = (distKm != null) ? distKm.toFixed(1) + ' km' : '—';
+    if (ultraEl) {
+        var line = formatArduinoUltrasonicReading(d);
+        if (!line && _arduinoLatestLogSnapshot) {
+            line = formatArduinoUltrasonicReading(_arduinoLatestLogSnapshot);
+        }
+        if (!line) {
+            var vs = _virtualSensorsLive || (lastMissionData && lastMissionData.virtual_sensors);
+            var prox = vs && vs.proximity;
+            if (prox && prox.target_detected && prox.range_to_target != null) {
+                var rm = Number(prox.range_to_target);
+                if (!isNaN(rm)) line = rm.toFixed(2) + ' m (sim)';
+            }
+        }
+        ultraEl.textContent = line || '—';
     }
 }
 
-function updateShipStatusPanel() {
-    var d = _arduinoLive;
-    var hasData = !!(d && d.updated_at != null);
-    var err = d && d.error;
-
-    var dotEl = document.getElementById('ship-status-dot');
-    if (dotEl) {
-        if (err) {
-            dotEl.style.background = '#f97316';
-            dotEl.style.boxShadow = '0 0 6px #f97316';
-        } else {
-            dotEl.style.background = hasData ? '#22c55e' : '#64748b';
-            dotEl.style.boxShadow = hasData ? '0 0 6px #22c55e' : 'none';
-        }
-    }
-
-    var magEl = document.getElementById('ship-status-magnetic');
-    if (magEl) {
-        var magOn = arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall);
-        if (magOn) {
-            magEl.textContent = 'Detected';
-            magEl.style.color = '#ff5555';
-        } else if (d.magnetic === false || d.hall === false) {
-            magEl.textContent = 'Clear';
-            magEl.style.color = '#22c55e';
-        } else {
-            magEl.textContent = '—';
-            magEl.style.color = '';
-        }
-    }
-
-    var tempEl = document.getElementById('ship-status-temp');
-    if (tempEl) {
-        var tRaw = arduinoLiveNum(d.temperature);
-        var tScaled = tRaw != null ? tRaw * TEMP_FACTOR : null;
-        tempEl.textContent = (tScaled != null) ? tScaled.toFixed(1) + ' °C' : '—';
-    }
+function fetchArduinoLogLatestForPopup() {
+    return fetch('/api/arduino/logs/latest')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (obj) {
+            if (obj && typeof obj === 'object') _arduinoLatestLogSnapshot = obj;
+            if (_orbitPopupArduinoOpen) updatePopupWithArduino();
+        })
+        .catch(function () {});
 }
 
 function startPopupArduinoPolling() {
     stopPopupArduinoPolling();
+    _popupArduinoLogPollTick = 0;
     fetchArduinoLive();
+    fetchArduinoLogLatestForPopup();
     _popupArduinoIntervalId = setInterval(function () {
         fetchArduinoLive();
+        _popupArduinoLogPollTick += 1;
+        if (_popupArduinoLogPollTick % 8 === 0) {
+            fetchArduinoLogLatestForPopup();
+        }
     }, 50);
 }
 
@@ -1483,12 +1701,16 @@ function stopPopupArduinoPolling() {
         clearInterval(_popupArduinoIntervalId);
         _popupArduinoIntervalId = null;
     }
+    _popupArduinoLogPollTick = 0;
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Initialize on page load: cover visible, dashboard hidden; no auto-load.
 function initCover() {
     startLiveTime();
+    // #region agent log
+    debugLog937bb1('dashboard.js:initCover:entry', 'initCover entry', { readyState: document.readyState }, 'start-btn-issue', 'H1');
+    // #endregion
     document.addEventListener('click', function(e) {
         if (e.target && (e.target.id === 'no-anomaly-close' || (e.target.closest && e.target.closest('#no-anomaly-close')))) {
             noAnomalyPanelDismissed = true;
@@ -1504,6 +1726,9 @@ function initCover() {
     var seedBlock = document.getElementById('cover-seed-block');
     var generatedSeedEl = document.getElementById('generated-seed-value');
     var seedInput = document.getElementById('seed-input');
+    // #region agent log
+    debugLog937bb1('dashboard.js:initCover:elements', 'cover elements lookup', { hasCover: !!cover, hasDashboard: !!dashboard, hasStartBtn: !!startBtn, hasSeedInput: !!seedInput }, 'start-btn-issue', 'H1');
+    // #endregion
 
     function setCoverStatus(text, isError) {
         if (!coverStatus) return;
@@ -1534,7 +1759,33 @@ function initCover() {
         if (seedInput) seedInput.value = String(seed);
     }
 
-    // Direct listener on Seed button so it always works (some environments miss delegation)
+    function launchFromCover(seedValue) {
+        var seedStart = seedValue;
+        // #region agent log
+        debugLog937bb1('dashboard.js:launchFromCover:entry', 'launchFromCover invoked', { seedStart: seedStart }, 'start-btn-issue', 'H2');
+        // #endregion
+        setLoading(true);
+        setCoverStatus('Launching with seed ' + (seedStart != null ? seedStart : 'default') + '…');
+        loadMissionData(seedStart)
+            .then(function() {
+                if (cover) cover.style.display = 'none';
+                if (dashboard) {
+                    dashboard.classList.remove('dashboard-hidden');
+                    dashboard.classList.add('dashboard-visible');
+                }
+                startStreamRefresh();
+            })
+            .catch(function(err) {
+                console.error('Error loading mission data:', err);
+                // #region agent log
+                debugLog937bb1('dashboard.js:launchFromCover:catch', 'launchFromCover caught error', { error: String(err && err.message ? err.message : err) }, 'start-btn-issue', 'H4');
+                // #endregion
+                setCoverStatus('Failed to load mission data. Try again.', true);
+            })
+            .finally(setLoading);
+    }
+
+    // Direct listener on Seed/Start so they always work (some environments miss delegation)
     var seedBtn = document.getElementById('cover-seed-btn');
     if (seedBtn) {
         seedBtn.addEventListener('click', function(ev) {
@@ -1543,6 +1794,22 @@ function initCover() {
             var seed = generateSeed();
             showSeedOnCover(seed);
             setCoverStatus('Seed generated. Press Start to launch with this seed.');
+        });
+    }
+    if (startBtn) {
+        startBtn.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            var rawStart = (seedInput && (seedInput.value || '').trim()) || '';
+            var seedStart = rawStart === '' ? null : parseInt(rawStart, 10);
+            // #region agent log
+            debugLog937bb1('dashboard.js:startBtn:click', 'startBtn direct click', { rawStart: rawStart, parsedSeed: seedStart, invalidSeed: (rawStart !== '' && isNaN(seedStart)) }, 'start-btn-issue', 'H2');
+            // #endregion
+            if (rawStart !== '' && isNaN(seedStart)) {
+                setCoverStatus('Enter a seed (integer) or press Seed then Start.', true);
+                return;
+            }
+            launchFromCover(seedStart);
         });
     }
 
@@ -1609,22 +1876,7 @@ function initCover() {
                     setCoverStatus('Enter a seed (integer) or press Seed then Start.', true);
                     return;
                 }
-                setLoading(true);
-                setCoverStatus('Launching with seed ' + (seedStart != null ? seedStart : 'default') + '…');
-                loadMissionData(seedStart)
-                    .then(function() {
-                        if (cover) cover.style.display = 'none';
-                        if (dashboard) {
-                            dashboard.classList.remove('dashboard-hidden');
-                            dashboard.classList.add('dashboard-visible');
-                        }
-                        startStreamRefresh();
-                    })
-                    .catch(function(err) {
-                        console.error('Error loading mission data:', err);
-                        setCoverStatus('Failed to load mission data. Try again.', true);
-                    })
-                    .finally(setLoading);
+                launchFromCover(seedStart);
             }
         });
     }
@@ -1657,16 +1909,30 @@ function initCover() {
         return { time: m[1], dist: m[2], mag: m[3].trim(), hall: null, temp: m[4], vib: m[5].trim() };
     }
 
-    function _renderTable(lines) {
+    function _renderTable(entries, lines) {
         var tbody = document.getElementById('sensor-log-tbody');
         var empty = document.getElementById('sensor-log-empty');
         if (!tbody) return;
 
         var parsed = [];
-        for (var i = lines.length - 1; i >= 0; i--) {
-            var p = _parseLogLine(lines[i]);
-            if (p) parsed.push(p);
-            if (parsed.length >= 100) break;
+        if (Array.isArray(entries) && entries.length > 0) {
+            for (var i = entries.length - 1; i >= 0; i--) {
+                var e = entries[i] || {};
+                var t = (e.timestamp || '').toString();
+                var dist = formatArduinoUltrasonicReading(e) || '—';
+                var mag = (e.magnetic === true) ? 'DETECTED' : ((e.magnetic === false) ? 'clear' : '—');
+                var hall = (e.hall === true) ? 'DETECTED' : ((e.hall === false) ? 'clear' : null);
+                var temp = (typeof e.temperature_c === 'number') ? (e.temperature_c.toFixed(1) + ' °C') : '—';
+                var vib = (e.vibration === true) ? 'YES' : ((e.vibration === false) ? 'no' : '—');
+                parsed.push({ time: t, dist: dist, mag: mag, hall: hall, temp: temp, vib: vib });
+                if (parsed.length >= 100) break;
+            }
+        } else if (Array.isArray(lines)) {
+            for (var j = lines.length - 1; j >= 0; j--) {
+                var p = _parseLogLine(lines[j]);
+                if (p) parsed.push(p);
+                if (parsed.length >= 100) break;
+            }
         }
 
         if (parsed.length === 0) {
@@ -1677,8 +1943,8 @@ function initCover() {
         if (empty) empty.style.display = 'none';
 
         var html = '';
-        for (var j = 0; j < parsed.length; j++) {
-            var r = parsed[j];
+        for (var k = 0; k < parsed.length; k++) {
+            var r = parsed[k];
             var magCell = r.hall != null
                 ? ((r.mag === 'DETECTED' || r.hall === 'DETECTED') ? 'DETECTED' : r.mag)
                 : r.mag;
@@ -1700,8 +1966,8 @@ function initCover() {
         fetch('/api/arduino/logs/' + encodeURIComponent(filename) + '?lines=200')
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
-                if (!data || !data.lines) return;
-                _renderTable(data.lines);
+                if (!data) return;
+                _renderTable(data.entries || null, data.lines || null);
             })
             .catch(function () {});
     }
@@ -1710,10 +1976,23 @@ function initCover() {
         var el = document.getElementById('sensor-log-latest');
         if (!el) return;
         fetch('/api/arduino/logs/latest')
-            .then(function (r) { return r.ok ? r.text() : null; })
-            .then(function (text) {
-                if (!text) { el.style.display = 'none'; return; }
-                el.textContent = text;
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (obj) {
+                if (!obj) { el.style.display = 'none'; return; }
+                _arduinoLatestLogSnapshot = obj;
+                if (typeof _orbitPopupArduinoOpen !== 'undefined' && _orbitPopupArduinoOpen) {
+                    updatePopupWithArduino();
+                }
+                var lines = [
+                    'Timestamp : ' + (obj.timestamp || '—'),
+                    'Distance  : ' + (formatArduinoUltrasonicReading(obj) || '—'),
+                    'Magnetic  : ' + (obj.magnetic === true ? 'DETECTED' : (obj.magnetic === false ? 'clear' : '—')),
+                    'Hall      : ' + (obj.hall === true ? 'DETECTED' : (obj.hall === false ? 'clear' : '—')),
+                    'Temp      : ' + (typeof obj.temperature_c === 'number' ? (obj.temperature_c.toFixed(1) + ' °C') : '—'),
+                    'Humidity  : ' + (typeof obj.humidity_pct === 'number' ? (obj.humidity_pct.toFixed(1) + ' %') : '—'),
+                    'Vibration : ' + (obj.vibration === true ? 'YES' : (obj.vibration === false ? 'no' : '—'))
+                ];
+                el.textContent = lines.join('\n');
                 el.style.display = '';
             })
             .catch(function () { el.style.display = 'none'; });
@@ -1795,14 +2074,24 @@ function initCover() {
     }
 })();
 
+function startSimulatedBatteryTicker() {
+    applySimulatedBatteryUI();
+    if (_simBatteryIntervalId != null) clearInterval(_simBatteryIntervalId);
+    _simBatteryIntervalId = setInterval(applySimulatedBatteryUI, 1000);
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
         initCover();
+        startSimulatedBatteryTicker();
+        startVirtualSensorsStream();
         startArduinoAutoConnect();
         startArduinoPolling();
     });
 } else {
     initCover();
+    startSimulatedBatteryTicker();
+    startVirtualSensorsStream();
     startArduinoAutoConnect();
     startArduinoPolling();
 }

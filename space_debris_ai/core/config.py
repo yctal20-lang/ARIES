@@ -91,6 +91,48 @@ class SensorConfig(BaseModel):
     position_accuracy: float = Field(default=10.0, description="Position accuracy in meters")
     attitude_accuracy: float = Field(default=0.01, description="Attitude accuracy in degrees")
 
+    # --- Virtual sensor parameters ---
+    # GPS
+    gps_position_noise_km: float = Field(default=0.01, description="GPS position 1-sigma noise (km)")
+    gps_velocity_noise_kms: float = Field(default=0.001, description="GPS velocity 1-sigma noise (km/s)")
+    gps_update_rate: float = Field(default=1.0, description="GPS update rate (Hz)")
+
+    # Star tracker
+    star_tracker_noise_deg: float = Field(default=0.01, description="Star tracker 1-sigma noise (deg)")
+    star_tracker_update_rate: float = Field(default=5.0, description="Star tracker update rate (Hz)")
+
+    # Radar (virtual)
+    radar_range_noise_km: float = Field(default=0.005, description="Radar range noise (km)")
+    radar_angle_noise_rad: float = Field(default=0.0087, description="Radar angle noise (rad)")
+
+    # Magnetometer
+    magnetometer_noise_ut: float = Field(default=0.1, description="Magnetometer noise (micro-Tesla)")
+    magnetometer_update_rate: float = Field(default=10.0, description="Magnetometer update rate (Hz)")
+
+    # Sun sensor
+    sun_sensor_noise_deg: float = Field(default=0.5, description="Sun sensor noise (deg)")
+    sun_sensor_update_rate: float = Field(default=10.0, description="Sun sensor update rate (Hz)")
+
+    # Proximity
+    proximity_max_range_m: float = Field(default=50.0, description="Proximity sensor max range (m)")
+    proximity_noise_m: float = Field(default=0.01, description="Proximity range noise (m)")
+
+    # Thermal
+    thermal_noise_c: float = Field(default=0.5, description="Thermal sensor noise (C)")
+
+    # Doppler
+    doppler_max_range_km: float = Field(default=2.0, description="Doppler max range (km)")
+    doppler_velocity_noise_ms: float = Field(default=0.01, description="Doppler velocity noise (m/s)")
+
+    # Accelerometer
+    accelerometer_noise_ms2: float = Field(default=1e-5, description="Accelerometer noise (m/s^2)")
+
+    # Spectrometer
+    spectrometer_max_range_km: float = Field(default=0.5, description="Spectrometer max range (km)")
+
+    # Enable virtual sensors in OrbitalEnv
+    use_virtual_sensors: bool = Field(default=False, description="Enable virtual sensors in env observation")
+
 
 class SafetyConfig(BaseModel):
     """Safety system configuration."""

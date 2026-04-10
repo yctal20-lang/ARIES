@@ -7,12 +7,13 @@ Modules:
 - scenarios: Pre-defined training and testing scenarios
 """
 
-from .environment import OrbitalEnv
+from .environment import OrbitalEnv, EnvConfig
 from .physics import OrbitalMechanics, SpacecraftDynamics
 from .scenarios import ScenarioGenerator, Scenario
 
 __all__ = [
     "OrbitalEnv",
+    "EnvConfig",
     "OrbitalMechanics",
     "SpacecraftDynamics",
     "ScenarioGenerator",
