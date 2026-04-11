@@ -16,6 +16,53 @@ This system provides a complete neural network architecture for controlling a sp
 - **Manipulator Control** - SAC-based robotic arm control
 - **Object Tracking** - DETR-like multi-object tracker
 
+## Machine learning and neural networks in this project
+
+This section clarifies **what kind of AI** the repository implements and how the pieces fit together.
+
+### Terminology
+
+- **Machine learning (ML)** is the broad idea: systems that improve from **data** or from **interaction** with an environment (here, mostly the orbital simulator `OrbitalEnv`).
+- **Neural networks** are the main **learnable models** used inside that ML stack (deep learning): layers of parameters trained by gradient-based optimization.
+- **Reinforcement learning (RL)** is a family of ML methods where an **agent** learns a **policy** (what action to take) from **rewards** collected in the environment. In this project, **SAC** and **PPO** are RL algorithms; they typically use **neural networks** as function approximators for the policy and value/critic.
+- **This is not an LLM (large language model).** There is no text corpus, tokenizer, or vocabulary. Nothing here predicts the next **word token** or generates natural-language answers. If you see **attention** or **Transformer** in the code, it is applied to **numeric sequences** (telemetry), **detection features** (tracking), or similar—not to language.
+
+So: the project uses **ML**, and most trainable parts are **neural networks**, plus **classical** fusion and physics where noted below.
+
+### Map of subsystems to methods
+
+| Subsystem | Role | ML paradigm | Typical learnable part |
+| --------- | ---- | ----------- | ---------------------- |
+| Collision avoidance | Reactive safe motion | **RL** | **SAC** + policy/critic networks; CNN-style perception where used |
+| Energy management | Power allocation | **RL** | **PPO** + policy/value networks |
+| Manipulator control | Arm / gripper commands | **RL** | **SAC** + policy/critic networks |
+| Anomaly detection | Telemetry health | **Self-supervised** | **LSTM autoencoder** (reconstruct normal sequences; high error ⇒ anomaly) |
+| State prediction | Short-horizon dynamics | **Supervised** (+ constraints) | **TCN** with **physics-informed** loss |
+| Early warning | Critical-event risk from sequences | **Supervised** | **Multi-head self-attention** over sequence embeddings |
+| Failure prediction (TFT) | Remaining useful life / degradation | **Supervised** (time series) | **Temporal Fusion Transformer** on tabular/series features—not language |
+| Sensor filter | Denoise / reconstruct signals | **Self-supervised** | **Denoising autoencoder** |
+| Debris recognition | Classify debris type / attributes | **Supervised** | **CNN / multimodal encoders** (vision + radar-style features) |
+| Object tracking | Associate detections over time | **Supervised** (conceptually) | **Transformer encoder–decoder** (DETR-style) on detection features |
+| Navigation correction | Refine fused state | **Supervised** | **MLP + attention** over measurement channels (numeric, not text) |
+
+### Classical (non-neural) pieces
+
+These are still central to the system but are **not** “trained neural nets” in the usual sense:
+
+- **Extended Kalman Filter (EKF)** and related fusion in navigation.
+- **Orbital mechanics** and environment dynamics in `simulation/`.
+- **Safety** layers: watchdogs, fail-safes, timeouts.
+
+They complement learning: physics and filters provide structure; neural modules handle patterns that are hard to hand-code.
+
+### Data flow for training (high level)
+
+1. **RL scripts** roll out episodes in `OrbitalEnv`, optimize reward, save checkpoints under `checkpoints/…`.
+2. **Sequence models** (LSTM-AE, TCN) consume **telemetry or state trajectories**, often generated in the same simulator; optional **virtual sensor** streams increase feature dimension and realism for training.
+3. **Benchmark** utilities measure **inference latency and throughput** of modules, not language quality.
+
+For concrete commands and paths, see **[`training/README.md`](training/README.md)** and the [Training](#training) section below.
+
 ## Installation
 
 ```bash
@@ -310,6 +357,18 @@ Target performance:
 - Capture success rate: >85% first attempt
 - Failure prediction: >48h lead time, >80% accuracy
 - Latency: <100ms for Level 1 (survival) modules
+
+## Кратко по-русски: методы и термины
+
+Этот раздел дублирует смысл секции *Machine learning and neural networks in this project* для русскоязычных читателей.
+
+- **Машинное обучение (ML)** здесь — модели, которые улучшаются по **данным** или по **опыту в симуляторе** (`OrbitalEnv`).
+- **Нейронные сети** — основной тип обучаемых моделей (глубокое обучение): политики, критики, автоэнкодеры, TCN и т.д.
+- **Обучение с подкреплением (RL):** **SAC** и **PPO** учат **политику** (какие действия предпринимать) из **награды** в среде; внутри почти всегда стоят **нейросети** для политики и оценки ценности.
+- **Это не LLM:** нет работы с текстом, токенизатора и «следующего слова». **Attention** и **Transformer** в репозитории относятся к **числовым последовательностям** (телеметрия) или **признакам детекций** (трекинг), а не к естественному языку.
+- **Классика рядом с ML:** EKF и слияние измерений, орбитальная механика, watchdog и fail-safe — **не** глубокие сети, они задают физику и надёжность.
+
+**Скрипты обучения** и генерации датасетов описаны в [`training/README.md`](training/README.md).
 
 ## License
 

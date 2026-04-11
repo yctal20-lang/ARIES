@@ -237,6 +237,7 @@ function getAnomalyReasonLabel(type) {
         VIBRATION_SPIKE: 'Hull vibration (Arduino)',
         TEMP_ANOMALY: 'Temperature out of safe range (Arduino)',
         PROXIMITY_ALERT: 'Object too close to spacecraft',
+        PROXIMITY_THERMAL_ANOMALY: 'Ultrasonic range < 100 km and temperature > 30 °C (Arduino)',
     };
     return (map[type] != null ? map[type] : type) || 'Sensor anomaly';
 }
@@ -1011,6 +1012,8 @@ function renderOrbitChart(data) {
 var TEMP_FACTOR = 0.8;
 var TEMP_WARN_RAW = 32;
 var PROXIMITY_WARN_KM = 100;
+/** Combined Arduino anomaly: distance < 100 km and raw temperature > 30 °C */
+var COMPOUND_PROXIMITY_TEMP_C = 30;
 
 function updateDangerStatus(data) {
     var dangerLevels = data.danger_levels || [];
@@ -1034,8 +1037,19 @@ function updateDangerStatus(data) {
 
     var closestDistKm = arduinoLiveNum(d.distance_km);
     var proximityWarn = closestDistKm != null && closestDistKm < PROXIMITY_WARN_KM;
+    var compoundProxTemp =
+        closestDistKm != null &&
+        closestDistKm < PROXIMITY_WARN_KM &&
+        tempRaw != null &&
+        tempRaw > COMPOUND_PROXIMITY_TEMP_C;
 
-    var activeCount = (magOn ? 1 : 0) + (vibOn ? 1 : 0) + (tempWarn ? 1 : 0) + (proximityWarn ? 1 : 0);
+    var activeCount = (magOn ? 1 : 0) + (vibOn ? 1 : 0);
+    if (compoundProxTemp) {
+        activeCount += 2;
+    } else {
+        if (tempWarn) activeCount += 1;
+        if (proximityWarn) activeCount += 1;
+    }
 
     if (dangerValue) {
         var dangerLabel;
@@ -1057,6 +1071,9 @@ function updateDangerStatus(data) {
         if (tempVal == null) {
             tempEl.textContent = '—';
             tempEl.style.color = '';
+        } else if (compoundProxTemp) {
+            tempEl.textContent = tempVal.toFixed(1) + ' °C — CRITICAL (prox+temp)';
+            tempEl.style.color = '#ff4444';
         } else if (tempWarn) {
             tempEl.textContent = tempVal.toFixed(1) + ' °C — WARNING';
             tempEl.style.color = '#ff8c42';
@@ -1073,8 +1090,13 @@ function updateDangerStatus(data) {
     var proxEl = document.getElementById('danger-proximity');
     if (proxEl) {
         if (closestDistKm != null) {
-            proxEl.textContent = proximityWarn ? 'Not' : 'Safe';
-            proxEl.style.color = proximityWarn ? '#ff4444' : COLORS.green;
+            if (compoundProxTemp) {
+                proxEl.textContent = 'CRITICAL';
+                proxEl.style.color = '#ff4444';
+            } else {
+                proxEl.textContent = proximityWarn ? 'Not' : 'Safe';
+                proxEl.style.color = proximityWarn ? '#ff4444' : COLORS.green;
+            }
         } else {
             proxEl.textContent = 'Safe';
             proxEl.style.color = COLORS.green;
@@ -1135,14 +1157,18 @@ function updateDangerWarnings(data) {
     var rawAnomalies = [];
     var d = _arduinoLive || {};
     var nowSec = Date.now() / 1000;
+    var closestDistW = arduinoLiveNum(d.distance_km);
+    var tempRawW = arduinoLiveNum(d.temperature);
+    var proximityUnder100 = closestDistW != null && closestDistW < PROXIMITY_WARN_KM;
+    var compoundProxTemp =
+        proximityUnder100 && tempRawW != null && tempRawW > COMPOUND_PROXIMITY_TEMP_C;
 
     // Reset suppression when all sensors return to normal
     try {
         var hasMagAnomaly = arduinoSensorIsTrue(d.magnetic) || arduinoSensorIsTrue(d.hall);
         var hasVibAnomaly = arduinoSensorIsTrue(d.vibration);
-        var tempRawW = arduinoLiveNum(d.temperature);
         var hasTempAnomaly = tempRawW != null && tempRawW > TEMP_WARN_RAW;
-        if (!hasMagAnomaly && !hasVibAnomaly && !hasTempAnomaly) {
+        if (!hasMagAnomaly && !hasVibAnomaly && !hasTempAnomaly && !compoundProxTemp) {
             _arduinoAnomaliesSuppressed = false;
         }
     } catch (e) { /* ignore */ }
@@ -1172,16 +1198,41 @@ function updateDangerWarnings(data) {
         }
     } catch (e) { /* ignore */ }
 
-    // 3) Temperature anomaly
+    // 3) Combined: ultrasonic < 100 km AND temperature > 30 °C (single high-severity anomaly)
     try {
-        if (!_arduinoAnomaliesSuppressed && hasTempAnomaly && !dismissedAnomalyKeys['arduino_temp_warn']) {
+        if (
+            !_arduinoAnomaliesSuppressed &&
+            compoundProxTemp &&
+            !dismissedAnomalyKeys['arduino_proximity_temp_compound']
+        ) {
+            rawAnomalies.push({
+                time: nowSec,
+                score: 0.95,
+                type: 'PROXIMITY_THERMAL_ANOMALY',
+                stableKey: 'arduino_proximity_temp_compound',
+            });
+        }
+    } catch (e) { /* ignore */ }
+
+    // 4) Temperature anomaly (standalone — skipped when combined rule is active)
+    try {
+        if (
+            !_arduinoAnomaliesSuppressed &&
+            hasTempAnomaly &&
+            !compoundProxTemp &&
+            !dismissedAnomalyKeys['arduino_temp_warn']
+        ) {
             rawAnomalies.push({ time: nowSec, score: 0.7, type: 'TEMP_ANOMALY', stableKey: 'arduino_temp_warn' });
         }
     } catch (e) { /* ignore */ }
 
-    // 4) Proximity — ultrasonic distance < 100 km
-    var closestDistW = arduinoLiveNum(d.distance_km);
-    if (closestDistW != null && closestDistW < PROXIMITY_WARN_KM && !dismissedAnomalyKeys['proximity_warn']) {
+    // 5) Proximity — ultrasonic distance < 100 km (standalone — skipped when combined rule is active)
+    if (
+        closestDistW != null &&
+        closestDistW < PROXIMITY_WARN_KM &&
+        !compoundProxTemp &&
+        !dismissedAnomalyKeys['proximity_warn']
+    ) {
         rawAnomalies.push({ time: nowSec, score: 0.75, type: 'PROXIMITY_ALERT', stableKey: 'proximity_warn' });
     }
 
@@ -1195,7 +1246,14 @@ function updateDangerWarnings(data) {
         else if (a.type === 'VIBRATION_SPIKE') anomalyTitle = 'ANOMALY! Hull vibration detected.';
         else if (a.type === 'TEMP_ANOMALY') anomalyTitle = 'ANOMALY! Temperature out of range.';
         else if (a.type === 'PROXIMITY_ALERT') anomalyTitle = 'DANGER! Object too close (' + (closestDistW != null ? closestDistW.toFixed(1) : '?') + ' km).';
-        else anomalyTitle = 'ANOMALY! Level: ' + ((a.score || 0) * 100).toFixed(1) + '%';
+        else if (a.type === 'PROXIMITY_THERMAL_ANOMALY') {
+            anomalyTitle =
+                'ANOMALY! Ultrasonic < 100 km and temperature > 30 °C (' +
+                (closestDistW != null ? closestDistW.toFixed(1) : '?') +
+                ' km, ' +
+                (tempRawW != null ? tempRawW.toFixed(1) : '?') +
+                ' °C).';
+        } else anomalyTitle = 'ANOMALY! Level: ' + ((a.score || 0) * 100).toFixed(1) + '%';
         warnings.push({
             icon: '🚨',
             text: anomalyTitle,
@@ -1209,7 +1267,9 @@ function updateDangerWarnings(data) {
     });
     
     var needsImmediatePanel = warnings.length > 0;
-    var liveArduinoUrgent = !_arduinoAnomaliesSuppressed && (hasMagAnomaly || hasVibAnomaly || hasTempAnomaly);
+    var liveArduinoUrgent =
+        !_arduinoAnomaliesSuppressed &&
+        (hasMagAnomaly || hasVibAnomaly || hasTempAnomaly || compoundProxTemp);
     if (warnings.length > 0) {
         if (needsImmediatePanel || liveArduinoUrgent) {
             if (dangerPanelShowTimeoutId) {
@@ -1315,6 +1375,8 @@ var _arduinoPrevVibration = null;
 var _hallMagneticAnomalyEvents = [];
 var HALL_MAG_EVENTS_MAX = 40;
 var _arduinoAnomaliesSuppressed = false;
+/** Previous frame: ultrasonic < 100 km and temp > 30 °C (for rising-edge danger refresh) */
+var _arduinoPrevCompoundPT = false;
 var _arduinoPollingId = null;
 var _arduinoEventSource = null;
 /** Последний снимок из /api/arduino/logs/latest — те же поля distance_*, что в таблице лога */
@@ -1408,9 +1470,17 @@ function applyArduinoLiveData(data) {
             }
         }
         var tLiveRaw = _arduinoLive ? arduinoLiveNum(_arduinoLive.temperature) : null;
-        var tempAnomLive = tLiveRaw != null && tLiveRaw > TEMP_WARN_RAW;
+        var distLive = _arduinoLive ? arduinoLiveNum(_arduinoLive.distance_km) : null;
+        var compoundLive =
+            distLive != null &&
+            distLive < PROXIMITY_WARN_KM &&
+            tLiveRaw != null &&
+            tLiveRaw > COMPOUND_PROXIMITY_TEMP_C;
+        var compoundRising = compoundLive && !_arduinoPrevCompoundPT;
+        _arduinoPrevCompoundPT = compoundLive;
+        var tempAnomLive = (tLiveRaw != null && tLiveRaw > TEMP_WARN_RAW) || compoundLive;
         var anySensorActive = liveField || nowVib || tempAnomLive;
-        var mustRefreshDanger = fieldRising || vibRising;
+        var mustRefreshDanger = fieldRising || vibRising || compoundRising;
         var _tRes = Date.now();
         if (anySensorActive && (_tRes - _lastArduinoDangerResyncMs >= 400)) {
             _lastArduinoDangerResyncMs = _tRes;
